@@ -108,6 +108,7 @@ rl.question(lang.welcome, (nombre) => {
 function listContacts(query, cb){
     console.log(lang.log.execFunct.replace(`%funcion%`, `listContacts()`));
     const client = new MongoClient('mongodb://localhost:27017');
+    // const client = new MongoClient('mongodb://0.0.0.0:27017');
     client.connect((err, client) => {
         if(err) cb(err);
         else{
