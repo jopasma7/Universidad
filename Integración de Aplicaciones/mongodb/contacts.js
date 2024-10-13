@@ -28,7 +28,7 @@ const lang = {
         list : {
             query : "(LIST) : Introduzca una query (En blanco si no existe): ",
         },
-        remove : '(REMOVE) : Introduce el email del usuario que quieres eliminar.',
+        remove : '(REMOVE) : Introduce el email del usuario que quieres eliminar: ',
         exit : '(EXIT) : Saliendo del programa. Nos vemos pronto %username%.',
         main : 
 `----------------------------------------------------
@@ -84,7 +84,7 @@ function menu(){
                 rl.question("(UPDATE) : Email del usuario que deseas modificar: ", (oldEmail) => {
                     rl.question("(UPDATE) : Nuevo Email: ", (email) => {
                         rl.question("(UPDATE) : Nuevo Title: ", (title) => {
-                            addContact(oldEmail, email,title, (err) => {
+                            updateContact(oldEmail, email, title, (err) => {
                                 if(err) console.log(lang.err.replace("%error%",err.stack));
                                 else console.log(lang.cmd.add.success);
                                 console.log(lang.return);
@@ -152,7 +152,19 @@ function listContacts(query, cb){
 /* Función para eliminar a un contacto */
 function removeContact(email, cb){
     logMessage(lang.log.execFunct.replace(`%funcion%`, `removeContact()`));
-    
+    const client = new MongoClient('mongodb://localhost:27017');
+    client.connect((err, client) => {
+        if(err) cb(err);
+        else{
+            let db = client.db("ej4");
+            let col = db.collection("contacts");
+            col.deleteOne({email: email}, (err, res) => {
+                if(err) cb(err);
+                else cb();
+                client.close();
+            });
+        }
+    });
 
 } 
 
@@ -178,5 +190,23 @@ function addContact(title, email, cb){
 
 function updateContact(oldEmail, email, title, cb){
     logMessage(lang.log.execFunct.replace(`%funcion%`, `updateContact()`));
-    
+    const client = new MongoClient('mongodb://localhost:27017');
+    client.connect((err, client) => {
+        if(err) cb(err);
+        else{
+            //client.db("ej4").collection("contacts").insertOne();
+            let db = client.db("ej4");
+            let col = db.collection("contacts");
+            /*
+
+            Revisar comportamiento erroneo.
+
+            */
+            col.updateOne({ email : oldEmail },{ $set: { title : title , email : email } }, (err, res) => {
+                if(err) cb(err);
+                else cb();
+                client.close();
+            });
+        }
+    });
 } 
