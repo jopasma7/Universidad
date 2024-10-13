@@ -9,13 +9,15 @@ const rl = readline.createInterface({
 
 const lang = {
     welcome : '> Bienvenido al Programa. Por favor, ingresa tu nombre: ',
-    answer : `> Hola, %user%! ¿Qué vamos a hacer hoy?`,
+    answer : `> Hola, %username%! ¿Qué vamos a hacer hoy?`,
     invalid_action : "\n> Acción no válida. Revisa las posibles opciones.\n",
+    return : "\nRegresando al menú principal de comandos...\n",
     log : {
         contactAdded : `[LOG] >> Se ha registrado la acción para crear un nuevo usuario a la base de datos. Email: %email%, Title: %title%`,
         contactList : `[LOG] >> Se ha registrado la acción para listar los contactos de la base de datos. Con una query: [%query%].`,
         contactRemove : `[LOG] >> Se ha registrado la acción para eliminar al usuario [%email%] de la base de datos.`,
         execFunct : `[LOG] >> Ejecutando la función %funcion%`,
+        exit : `[LOG] >> Cerrando el programa...`,
     },
     cmd : {
         add : {
@@ -27,13 +29,25 @@ const lang = {
             query : "(LIST) : Introduzca una query (En blanco si no existe): ",
         },
         remove : '(REMOVE) : Introduce el email del usuario que quieres eliminar.',
-        main : `> Menú Principal:
+        exit : '(EXIT) : Saliendo del programa. Nos vemos pronto %username%.',
+        main : 
+`----------------------------------------------------
+    >> Menú Principal:
+----------------------------------------------------
     - ADD : Añadir un nuevo contacto.
     - LIST : Listar todos los contactos.
-    - UPDATE : Actualizar algún contacto existente.
-    - REMOVE : Eliminar un contacto.`,
+    - UPDATE : Actualizar algún contacto.
+    - REMOVE : Eliminar un contacto.
+    - EXIT : Salir del programa.
+----------------------------------------------------`,
     },
     err : `Error: %error%`        
+}
+
+
+
+function logMessage(message){
+    console.log('\x1b[3m'+message+'\x1b[0m');
 }
 
 // Main Menú ; Envía todos los comandos y acciones disponibles.
@@ -46,9 +60,10 @@ function menu(){
                         addContact(title, email,(err) => {
                             if(err) console.log(lang.err.replace("%error%",err.stack));
                             else console.log(lang.cmd.add.success);
-                        });
-                        console.log(lang.log.contactAdded.replace("%email%",email).replace("%title%",title));
-                        rl.close(); 
+                            logMessage(lang.log.contactAdded.replace("%email%",email).replace("%title%",title));
+                            console.log(lang.return);
+                            menu();
+                        });           
                     });
                 }); 
                                
@@ -58,11 +73,12 @@ function menu(){
                     listContacts(query, (err, contacts) => {
                         if(err) console.log(lang.err.replace("%error%",err.stack));
                         else console.log(contacts);
-                    });
-                    console.log(lang.log.contactList.replace("%query%",query));
-                    rl.close(); 
+                        logMessage(lang.log.contactList.replace("%query%",query));
+                        console.log(lang.return);
+                        menu();
+                    });                         
                 }); 
-                 
+            
                 break;
             case `UPDATE`:
                 rl.question("(UPDATE) : Email del usuario que deseas modificar: ", (oldEmail) => {
@@ -71,24 +87,29 @@ function menu(){
                             addContact(oldEmail, email,title, (err) => {
                                 if(err) console.log(lang.err.replace("%error%",err.stack));
                                 else console.log(lang.cmd.add.success);
+                                console.log(lang.return);
+                                menu();
                             });
                         }); 
                     }); 
                 }); 
-               
-                
+
                 break;
             case `REMOVE`:
                 rl.question(lang.cmd.remove, (email) => {
                     removeContact(email, (err) => {
                         if(err) console.log(lang.err.replace("%error%",err.stack));
-                        
-                    }); 
-                    console.log(lang.log.contactRemove.replace("%email%",email));
-                    rl.close(); 
+                        logMessage(lang.log.contactRemove.replace("%email%",email));
+                        console.log(lang.return);
+                        menu();
+                    });                  
                 }); 
-                
-                
+                           
+                break;
+            case `EXIT`:
+                rl.close();  
+                console.log(lang.cmd.exit.replace("%username%", username));  
+                logMessage(lang.log.exit);                 
                 break;
             default:
                 console.log(lang.invalid_action);
@@ -99,14 +120,18 @@ function menu(){
 } 
 
 // Inicio del programa. Manda un welcome mensaje y activa el menú de comandos.
+
+var username = "";
 rl.question(lang.welcome, (nombre) => {
-    console.log(lang.answer.replace("%user%", nombre));   
-    menu();   
+    username = nombre;
+    console.log(lang.answer.replace("%username%", username));     
+    menu();
+    
 });
 
 /* Función para recoger todos los usuarios de la base de datos */
 function listContacts(query, cb){
-    console.log(lang.log.execFunct.replace(`%funcion%`, `listContacts()`));
+    logMessage(lang.log.execFunct.replace(`%funcion%`, `listContacts()`));
     const client = new MongoClient('mongodb://localhost:27017');
     // const client = new MongoClient('mongodb://0.0.0.0:27017');
     client.connect((err, client) => {
@@ -126,14 +151,14 @@ function listContacts(query, cb){
 
 /* Función para eliminar a un contacto */
 function removeContact(email, cb){
-    console.log(lang.log.execFunct.replace(`%funcion%`, `removeContact()`));
+    logMessage(lang.log.execFunct.replace(`%funcion%`, `removeContact()`));
     
 
 } 
 
 /* Función para recoger los contactos y añadirlos a la base de datos */
 function addContact(title, email, cb){
-    console.log(lang.log.execFunct.replace(`%funcion%`, `addContact()`));
+    logMessage(lang.log.execFunct.replace(`%funcion%`, `addContact()`));
     const client = new MongoClient('mongodb://localhost:27017');
     client.connect((err, client) => {
         if(err) cb(err);
@@ -152,6 +177,6 @@ function addContact(title, email, cb){
 }
 
 function updateContact(oldEmail, email, title, cb){
-    console.log(lang.log.execFunct.replace(`%funcion%`, `updateContact()`));
+    logMessage(lang.log.execFunct.replace(`%funcion%`, `updateContact()`));
     
 } 
