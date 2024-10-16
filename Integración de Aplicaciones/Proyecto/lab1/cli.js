@@ -6,7 +6,7 @@ const rl = readline.createInterface({
     output: process.stdout 
 }); 
 
-rl.setPrompt("cli > "); 
+rl.setPrompt("TW Lite : "); 
 rl.prompt(); 
 rl.on("line", line => {    
     let args = minimist(fields = line.split(" "));    
@@ -36,6 +36,7 @@ function menu(args, cb) {
                         token = _token;
                         user = _user;
                         console.log("Welcome "+ _user.name);
+                        rl.setPrompt(user.name + " : "); 
                         cb();
                     }
                 })
