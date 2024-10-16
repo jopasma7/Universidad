@@ -7,5 +7,9 @@
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "minimist": "^1.2.8",
+    "mongodb": "4.17"
+  }
 }
