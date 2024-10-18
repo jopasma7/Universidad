@@ -30,6 +30,16 @@ function menu(args, cb) {
                 process.exit(0);
             break;
             case "login": 
+                if(args.e == undefined){
+                    print("No hay Email.","No hay Email", true);
+                    cb();
+                    break;
+                }
+                if(args.p == undefined){
+                    print("No hay Password.","No hay Password", true);
+                    cb();
+                    break;
+                }
                 model.login(args.e, args.p, (err, _token, _user) => {
                     if(err) console.log(err);
                     else {
@@ -40,6 +50,7 @@ function menu(args, cb) {
                         cb();
                     }
                 })
+                
             
             break;
             case "addUser": 
@@ -64,6 +75,27 @@ function menu(args, cb) {
                 cb();
         }    
     } 
+}
+
+
+// Mensaje de LOG para los resultados correctos. >> Color azul y cursiva.
+function logSuccess(message){
+    console.log('\x1b[34m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
+}
+
+// Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva.
+function logError(message){
+    console.log('\x1b[31m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
+}
+
+function print(message, logMessage, isError){
+    if(isError){
+        console.log(message);
+        logError(logMessage);
+    }else{
+        console.log(message);
+        logSuccess(logMessage);
+    }
 }
 
 function help (){

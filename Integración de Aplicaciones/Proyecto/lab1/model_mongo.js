@@ -1,6 +1,13 @@
 const mongodb = require('mongodb'); 
 const MongoClient = mongodb.MongoClient; 
 const url = 'mongodb://localhost:27017';
+const database = 'twitter_lite';
+
+
+var colecciones = {
+    users : "users",
+    messages : "messages"
+}
 
 var lang = {
     log : {
@@ -14,22 +21,56 @@ var lang = {
             no_nick : ">> Debes introducir un nick.",
             no_password : ">> Debes introducir una contraseña.",
         }
-    }
+    },
+    list : {
+
+    },
+    remove : {
+
+    },
+    update : {
+
+    },
+    login : {
+        log: {
+            invalid_credentials : "Registrando autentificación fallida para el email: %email% y password: %password%",
+            no_email_or_pass : "Autentificación fallida por falta del parámetro <email> o <password>.",
+        },
+        error : {
+            invalid_credentials : ">> El usuario o la contraseña especificados no existen en nuestra base de datos.",
+            no_email : ">> Necesitas especificar un email. Comando: login -e email -p password. ",
+            no_password : ">> Debes introducir una contraseña. Comando: login -e email -p password.",
+        }
+    },
+    list : {
+
+    },
 }
 
+/*                   Función de Login                   */
+/*           -------------------------------            */
+/*  Esta función sirve para iniciar sesión en Twitter   */
+/*           Requiere un <email> y <password>           */
+/*    Devuelve un <cb> con el resultado. Indicando      */
+/*         Si logró o falló la autentificación.         */
 
 function login(email, password, cb) {  
-    MongoClient.connect(url).then(client => {    
-        // create new callback for closing connection    
+    MongoClient.connect(url).then(client => {  
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */           
         _cb = function (err, res, res2) {      
             client.close();      
             cb(err, res, res2);    
         }  
 
-        let db = client.db('twitter_lite');    
-        let col = db.collection('users');    
+        /* Crea la conexión a la base de datos */
+        let db = client.db(database);    
+        let col = db.collection(colecciones.users);    
+
+        /* FindOne busca 1 valor en la base de datos */
         col.findOne({ email: email, password: password }).then(_user => {      
-            if (!_user) _cb(new Error('Wrong authentication'));      
+            if (!_user) print(lang.login.error.invalid_credentials, lang.login.log.login_error.replace("%email%", email).replace("%password%", password), true);  
+            
             else {      
                 _cb(null, _user._id.toHexString(), {         
                     id: _user._id.toHexString(), name: _user.name, surname: _user.surname,        
@@ -130,12 +171,22 @@ function listUsers(token, opts, cb) {
 
 // Mensaje de LOG para los resultados correctos. >> Color azul y cursiva.
 function logSuccess(message){
-    console.log('\x1b[34m%s\x1b[0m','\x1b[3m'+message+'\x1b[0m');
+    console.log('\x1b[34m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
 }
 
 // Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva.
 function logError(message){
-    console.log('\x1b[31m%s\x1b[0m','\x1b[3m'+message+'\x1b[0m');
+    console.log('\x1b[31m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
+}
+
+function print(message, logMessage, isError){
+    if(isError){
+        console.log(message);
+        logError(logMessage);
+    }else{
+        console.log(message);
+        logSuccess(logMessage);
+    }
 }
 
 module.exports = {
