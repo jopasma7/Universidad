@@ -2,49 +2,12 @@ const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient; 
 const url = 'mongodb://localhost:27017';
 const database = 'twitter_lite';
+const messages= require("./messages"); 
 
 
 var colecciones = {
     users : "users",
     messages : "messages"
-}
-
-var lang = {
-    log : {
-
-    },
-    add : {
-        error : {
-            no_name : ">> Debes introducir un nombre.",
-            no_surname : ">> Debes introducir un apellido.",
-            no_email : ">> Debes introducir un email.",
-            no_nick : ">> Debes introducir un nick.",
-            no_password : ">> Debes introducir una contraseña.",
-        }
-    },
-    list : {
-
-    },
-    remove : {
-
-    },
-    update : {
-
-    },
-    login : {
-        log: {
-            invalid_credentials : "Registrando autentificación fallida para el email: %email% y password: %password%",
-            no_email_or_pass : "Autentificación fallida por falta del parámetro <email> o <password>.",
-        },
-        error : {
-            invalid_credentials : ">> El usuario o la contraseña especificados no existen en nuestra base de datos.",
-            no_email : ">> Necesitas especificar un email. Comando: login -e email -p password. ",
-            no_password : ">> Debes introducir una contraseña. Comando: login -e email -p password.",
-        }
-    },
-    list : {
-
-    },
 }
 
 /*                   Función de Login                   */
@@ -67,14 +30,25 @@ function login(email, password, cb) {
         let db = client.db(database);    
         let col = db.collection(colecciones.users);    
 
-        /* FindOne busca 1 valor en la base de datos */
+        /* FindOne busca 1 valor con el <email> y <password> en la base de datos */
+        /* Devolverá el resultado dentro del campo <user> del callback */
         col.findOne({ email: email, password: password }).then(_user => {      
-            if (!_user) print(lang.login.error.invalid_credentials, lang.login.log.login_error.replace("%email%", email).replace("%password%", password), true);  
-            
-            else {      
+            /* Revisamos si el usuario NO está registrado en la base de datos */
+            if (!_user) {
+                print(messages.login.invalid_credentials, 
+                (messages.login.log.invalid_credentials.replace("%email%", email)
+                .replace("%password%", password)), 0);              
+                _cb(null); // Devuelve un Err:null, Token:undefined y User:undefined
+            }else {      
+                /* Como si está registrado hacemos las operaciones */
+                /* Asignamos toda la información del usuario de la base de datos al usuario actual */
                 _cb(null, _user._id.toHexString(), {         
-                    id: _user._id.toHexString(), name: _user.name, surname: _user.surname,        
-                    email: _user.email, nick: _user.nick });    
+                    id: _user._id.toHexString(), 
+                    name: _user.name, 
+                    surname: _user.surname,        
+                    email: _user.email, 
+                    nick: _user.nick
+                });    
             }}).catch(err => {      
                 _cb(err)    
             });  
@@ -83,43 +57,62 @@ function login(email, password, cb) {
     }); 
 }
 
-function addUser(user, cb) {  
-    if (!user.name) cb(new Error(lang.add.error.no_name));  
-    else if (!user.surname) cb(new Error(lang.add.error.no_surname));  
-    else if (!user.email) cb(new Error(lang.add.error.no_email));  
-    else if (!user.nick) cb(new Error(lang.add.error.no_nick));  
-    else if (!user.password) cb(new Error(lang.add.error.no_password));  
-    else {    MongoClient.connect(url).then((client) => {      
-        
-        // create new callback for closing connection      
-        _cb = function (err, res) {        
-            client.close();        
-            cb(err, res);      
-        }
 
-        let db = client.db('twitter_lite');      
-        let users = db.collection('users');      
-        users.findOne({ $or:[{ email: user.email },{ nick: user.nick }] }).then(        
-            (_user) => {          
-                if (_user) _cb(new Error('User already exists'));          
-                else {            
-                    user.following = [];            
-                    users.insertOne(user).then(result => {              
-                        _cb(null, {                
-                            id: result.insertedId.toHexString(), name: user.name,                 
-                            surname: user.surname, email: user.email, nick: user.nick              
-                        });            
-                    }).catch(err => {              
-                        _cb(err)            
-                    });          
-                }        
-            }).catch(err => {          
-                _cb(err)        
-            });      
+/*             Función para Añadir Usuario              */
+/*         -----------------------------------          */
+/*  Esta función sirve para agregar nuevos usuarios a   */
+/*          la base de datos de la aplicación           */
+/*                  Requiere un <user>                  */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*       Si logró o falló la creación del usuario       */
+
+function addUser(user, cb) {  
+
+    /* Realizamos una serie de comprobaciones para revisar si el <user> que nos pasaron */
+    /* tiene todos los parámetros correctamente establecidos. */
+    if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
+    (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
+    (user.password == undefined || !user.password)){
+        print(messages.add.no_param, messages.add.log.no_param, 0);
+        cb();
+    }else{
+        MongoClient.connect(url).then((client) => {      
+        
+            /* Crear un nuevo callback llamado _cb que hace lo mismo */
+            /* que el cb normal pero también cierra la conexión */       
+            _cb = function (err, res) {        
+                client.close();        
+                cb(err, res);      
+            }
+    
+             /* Crea la conexión a la base de datos */
+            let db = client.db(database);      
+            let users = db.collection(colecciones.users);   
+            
+            /* Revisamos con FindOne un1 valor con el <email> y <password> en la base de datos */
+            /* Para revisar si el usuario insertado ya existe en la Database */
+            /* En caso de no existir creamos uno nuevo y si existe devolver error */
+            users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
+                .then((_user) => {          
+                    if (_user) _cb(new Error('User already exists'));          
+                    else {            
+                        user.following = [];            
+                        users.insertOne(user).then(result => {              
+                            _cb(null, {                
+                                id: result.insertedId.toHexString(), name: user.name,                 
+                                surname: user.surname, email: user.email, nick: user.nick              
+                            });            
+                        }).catch(err => {              
+                            _cb(err)            
+                        });          
+                    }        
+                }).catch(err => {          
+                    _cb(err)        
+                });      
         }).catch(err => {          
             _cb(err)        
-        });  
-    }
+        });
+    }   
 }
 
 function listUsers(token, opts, cb) {  
@@ -165,32 +158,42 @@ function listUsers(token, opts, cb) {
     }); 
 }
 
-//addUser({name:'a', surname: 'b', email: 'c', password: 'd', nick:'e'},(err,res)=>console.log(err||res));
-//login("c","d", (err,token, user) => console.log(err || token + ":" + JSON.stringify(user)));
-//listUsers("b");
+// Mensaje de info para los mensajes informativos. >> Color azul.
+function info(message){
+    console.log('\x1b[34m[Info]\x1b[0m ' + message);
+}
 
-// Mensaje de LOG para los resultados correctos. >> Color azul y cursiva.
-function logSuccess(message){
-    console.log('\x1b[34m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
+// Mensaje de éxitos para los resultados correctos. >> Color verde.
+function success(message){
+    console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
+}
+
+// Mensaje de error para los resultados erróneos. >> Color rojo.
+function error(message){
+    //console.log('\x1b[31m%s\x1b[0m',message);
+    console.log('\x1b[31m[Error]\x1b[0m ' + message);
 }
 
 // Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva.
-function logError(message){
-    console.log('\x1b[31m%s\x1b[0m','\x1b[3m[LOG] '+message+'\x1b[0m');
+function log(message){
+    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+message+'\x1b[0m');
 }
 
-function print(message, logMessage, isError){
-    if(isError){
-        console.log(message);
-        logError(logMessage);
-    }else{
-        console.log(message);
-        logSuccess(logMessage);
+function print(message, logMessage, color){
+    switch(color){
+        case 0: error(message);
+        break;
+        case 1: success(message);
+        break;
+        case 2: info(message);
+        break;
     }
+    log(logMessage);
 }
+
 
 module.exports = {
     addUser,    
     login,    
-    listUsers 
+    listUsers
 }
