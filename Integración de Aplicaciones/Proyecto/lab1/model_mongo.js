@@ -93,10 +93,18 @@ function addUser(user, cb) {
             /* Para revisar si el usuario insertado ya existe en la Database */
             /* En caso de no existir creamos uno nuevo y si existe devolver error */
             users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
-                .then((_user) => {          
-                    if (_user) _cb(new Error('User already exists'));          
+                .then((_user) => { 
+                    /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
+                    /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
+                    if(_user){ 
+                        if (_user.email == user.email) print(messages.add.email_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        else if (_user.nick == user.nick) print(messages.add.nick_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        _cb(null); 
+                    }       
+                    /* Si no existe, hay que crear el usuario y devolverlo por el callback */
                     else {            
-                        user.following = [];            
+                        user.following = []; 
+                        /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
                         users.insertOne(user).then(result => {              
                             _cb(null, {                
                                 id: result.insertedId.toHexString(), name: user.name,                 
@@ -115,20 +123,40 @@ function addUser(user, cb) {
     }   
 }
 
+/*            Función para Listar Usuarios              */
+/*        -----------------------------------           */
+/* Esta función sirve para listar a todos los usuarios  */
+/*         de la base de datos de la aplicación         */
+/*                 Requiere un <token>                  */
+/*    Se pueden especificar <opts> que son opciones.    */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        la lista de usuarios que hemos listado        */
+
 function listUsers(token, opts, cb) {  
-    MongoClient.connect(url).then(client => {    
-        // create new callback for closing connection    
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */  
         _cb = function (err, res) {      
             client.close();      
             cb(err, res);    
-        }    
-        let db = client.db('twitter_lite');    
-        let users = db.collection('users');    
-        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
-            if (!_user) _cb(new Error('Wrong token'));      
-            else {        
-                // adapt query        
-                let _query = opts.query || {};        
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users);    
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => {      
+            if (!_user) {
+                print(messages.list.no_logged, (messages.list.log.no_logged_token.replace("%token%",token)),0);
+                _cb(null);  
+            }else {        
+                // adapt query  
+                 
+                let _query = opts.q || {};        
                 for (let key in _query) {          
                     if (Array.isArray(_query[key])) _query[key] = { $in: _query[key] };        
                 }        
@@ -136,20 +164,22 @@ function listUsers(token, opts, cb) {
                 let _opts = {};        
                 if (opts.ini) _opts.skip = opts.ini;        
                 if (opts.count) _opts.limit = opts.count;        
-                if (opts.sort) _opts.sort = [[opts.sort.slice(1),          
-                    (opts.sort.charAt(0) == '+' ? 1 : -1)]];        
-                    users.find(_query, _opts).toArray().then(_results => {          
-                        let results = _results.map((user) => {            
-                            return {              
-                                id: user._id.toHexString(), name: user.name,              
-                                surname: user.surname, email: user.email, nick: user.nick            
-                            };          
-                        });          
-                        _cb(null, results);        
-                    }).catch(err => {          
-                        _cb(err)        
-                    });      
-                }    
+                if (opts.sort) _opts.sort = [[opts.sort.slice(1), (opts.sort.charAt(0) == '+' ? 1 : -1)]];  
+                
+                /* Busca en la base de datos la query seleccionada */ 
+                users.find(_query, _opts).toArray()
+                .then(_results => {          
+                    let results = _results.map((user) => {            
+                        return {              
+                            id: user._id.toHexString(), name: user.name,              
+                            surname: user.surname, email: user.email, nick: user.nick            
+                        };          
+                    });          
+                    _cb(null, results);        
+                }).catch(err => {          
+                    _cb(err)        
+                });      
+            }    
         }).catch(err => {      
             _cb(err)    
         });  

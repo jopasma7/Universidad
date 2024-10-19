@@ -24,7 +24,7 @@ function menu(args, cb) {
     else {        
         switch (args._[0]) {           
             case "login": 
-                // Comprobación de los parámetros. Revisa si existen y no son undefined.
+                /* Comprobación de los parámetros. Revisa si existen y no son undefined */
                 if(args.e == undefined){
                     print(messages.login.no_email,messages.login.log.no_email_or_pass, 0);
                     cb(); break;
@@ -33,7 +33,7 @@ function menu(args, cb) {
                     cb(); break;
                 }
 
-                // Llama al método login del Model.
+                /* Llama al método login del Model */
                 model.login(args.e, args.p, (err, _token, _user) => {
                     if(err) console.log(err);
                     else if(_token == undefined){
@@ -51,6 +51,24 @@ function menu(args, cb) {
                 
             
             break;
+            case "listUsers": 
+                /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                /* Puede no tener parámetros... */
+                /* .
+                 * .
+                 * .
+                 */
+
+                // Llama al método del Model para listar a los Usuarios.
+                model.listUsers(token, args, (err, res) => {
+                    if(err) console.log(err);
+                    else if(res == undefined) cb();
+                    else {  
+                        console.table(res);                     
+                        cb();
+                    }
+                })
+            break;  
             case "help": 
                 console.log(messages.menu);
                 cb();
@@ -60,9 +78,9 @@ function menu(args, cb) {
                 process.exit(0);
             break;
             
-            // Comando para Agregar un usuario a la base de datos. 
+            /* Comando para Agregar un usuario a la base de datos */ 
             case "addUser": 
-                // Comprobación de los parámetros. Revisa si existen y no son undefined.
+                /* Comprobación de los parámetros. Revisa si existen y no son undefined */
                 if((args.n == undefined) || !args.n){
                     print(messages.add.no_name, messages.add.log.no_param, 0);
                     cb(); break;                  
@@ -80,11 +98,16 @@ function menu(args, cb) {
                     cb(); break;
                 }
 
-                // Crea el usuario <u> con lo valores proporcionados en el comando.
+                /* Crea el usuario <u> con lo valores proporcionados en el comando */
                 let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
 
-                // Llama a la función addUser() del Model.
+                /* Llama a la función addUser() del Model */
                 model.addUser(u, (err, u) =>{
+                    /* Comprobación de si el método addUser devuelve un usuario undefined */
+                    /* En caso de devolverlo es porque ya existe el usuario en la base de datos y devuelve error */
+                    if(u == undefined) cb();
+            
+
                     if(err) console.log(err);
                     cb();
                 })
@@ -101,23 +124,23 @@ function menu(args, cb) {
 }
 
 
-// Mensaje de info para los mensajes informativos. >> Color azul.
+/* Mensaje de info para los mensajes informativos. >> Color azul */
 function info(message){
     console.log('\x1b[34m[Info]\x1b[0m ' + message);
 }
 
-// Mensaje de éxitos para los resultados correctos. >> Color verde.
+/* Mensaje de éxitos para los resultados correctos. >> Color verde */
 function success(message){
     console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
 }
 
-// Mensaje de error para los resultados erróneos. >> Color rojo.
+/* Mensaje de error para los resultados erróneos. >> Color rojo */
 function error(message){
     //console.log('\x1b[31m%s\x1b[0m',message);
     console.log('\x1b[31m[Error]\x1b[0m ' + message);
 }
 
-// Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva.
+/* Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva */
 function log(message){
     console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+message+'\x1b[0m');
 }
