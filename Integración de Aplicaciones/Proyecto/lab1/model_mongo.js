@@ -47,6 +47,7 @@ function login(email, password, cb) {
                     name: _user.name, 
                     surname: _user.surname,        
                     email: _user.email, 
+                    password: _user.password,
                     nick: _user.nick
                 });    
             }}).catch(err => {      
@@ -73,7 +74,7 @@ function addUser(user, cb) {
     if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
     (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
     (user.password == undefined || !user.password)){
-        print(messages.add.no_param, messages.add.log.no_param, 0);
+        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
         cb();
     }else{
         MongoClient.connect(url).then((client) => {      
@@ -89,7 +90,7 @@ function addUser(user, cb) {
             let db = client.db(database);      
             let users = db.collection(colecciones.users);   
             
-            /* Revisamos con FindOne un1 valor con el <email> y <password> en la base de datos */
+            /* Revisamos con FindOne si existe e1 usuario con el <email> y <password> en la base de datos */
             /* Para revisar si el usuario insertado ya existe en la Database */
             /* En caso de no existir creamos uno nuevo y si existe devolver error */
             users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
@@ -97,8 +98,8 @@ function addUser(user, cb) {
                     /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
                     /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
                     if(_user){ 
-                        if (_user.email == user.email) print(messages.add.email_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
-                        else if (_user.nick == user.nick) print(messages.add.nick_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        if (_user.email == user.email) print(messages.modify.email_exists, (messages.modify.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        else if (_user.nick == user.nick) print(messages.modify.nick_exists, (messages.modify.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
                         _cb(null); 
                     }       
                     /* Si no existe, hay que crear el usuario y devolverlo por el callback */
@@ -135,57 +136,70 @@ function addUser(user, cb) {
 
 function updateUser(token, user, cb){
     /* Realizamos una serie de comprobaciones para revisar el <user> que nos pasaron */
-    /* Si no tiene ningún parámetro devolveremos error. */
+    /* Si tiene algún parámetro... procederemos a realizar el cambio. */
+    if(user.name != undefined || user.surname != undefined || user.email != undefined ||
+        user.password != undefined || user.nick != undefined){
+            MongoClient.connect(url).then((client) => {      
+        
+                /* Crear un nuevo callback llamado _cb que hace lo mismo */
+                /* que el cb normal pero también cierra la conexión */       
+                _cb = function (err, res) {        
+                    client.close();        
+                    cb(err, res);      
+                }
+        
+                 /* Crea la conexión a la base de datos */
+                let db = client.db(database);      
+                let users = db.collection(colecciones.users);   
+                
+                /* Recogemos con FindOne al usuario con el <token>:<token> en la base de datos */
+                /* Lo usaremos para hacer los cambios */
+                /* En caso de no existir creamos uno nuevo y si existe devolver error */
+                users.findOne({ id : token})
+                    .then((_user) => { 
+                        /* Si existe, Actualizaremos los datos que nos pasaron al usuario */
+                        if(_user){ 
+                            
+
+
+
+                            
+                        }       
+                        /* Si no existe, hay que crear el usuario y devolverlo por el callback */
+                        else {            
+                            user.following = []; 
+                            /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
+                            users.insertOne(user).then(result => {              
+                                _cb(null, {                
+                                    id: result.insertedId.toHexString(), name: user.name,                 
+                                    surname: user.surname, email: user.email, nick: user.nick              
+                                });            
+                            }).catch(err => {              
+                                _cb(err)            
+                            });          
+                        }        
+                    }).catch(err => {          
+                        _cb(err)        
+                    });      
+            }).catch(err => {          
+                _cb(err)        
+            });
+    }else{
+        /* Si no tiene ningún parámetro devolveremos error. */
+        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
+        cb(null);
+    }
+    
+    
+    
+    
     if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
     (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
     (user.password == undefined || !user.password)){
-        print(messages.add.no_param, messages.add.log.no_param, 0);
+        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
         cb();
     }else{
-        MongoClient.connect(url).then((client) => {      
         
-            /* Crear un nuevo callback llamado _cb que hace lo mismo */
-            /* que el cb normal pero también cierra la conexión */       
-            _cb = function (err, res) {        
-                client.close();        
-                cb(err, res);      
-            }
-    
-             /* Crea la conexión a la base de datos */
-            let db = client.db(database);      
-            let users = db.collection(colecciones.users);   
-            
-            /* Revisamos con FindOne un1 valor con el <email> y <password> en la base de datos */
-            /* Para revisar si el usuario insertado ya existe en la Database */
-            /* En caso de no existir creamos uno nuevo y si existe devolver error */
-            users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
-                .then((_user) => { 
-                    /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
-                    /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
-                    if(_user){ 
-                        if (_user.email == user.email) print(messages.add.email_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
-                        else if (_user.nick == user.nick) print(messages.add.nick_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
-                        _cb(null); 
-                    }       
-                    /* Si no existe, hay que crear el usuario y devolverlo por el callback */
-                    else {            
-                        user.following = []; 
-                        /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
-                        users.insertOne(user).then(result => {              
-                            _cb(null, {                
-                                id: result.insertedId.toHexString(), name: user.name,                 
-                                surname: user.surname, email: user.email, nick: user.nick              
-                            });            
-                        }).catch(err => {              
-                            _cb(err)            
-                        });          
-                    }        
-                }).catch(err => {          
-                    _cb(err)        
-                });      
-        }).catch(err => {          
-            _cb(err)        
-        });
     }
 }
 
