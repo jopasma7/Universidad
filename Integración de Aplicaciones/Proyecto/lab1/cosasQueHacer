@@ -16,6 +16,7 @@ LISTUSERS :
 
 
 UPDATE :
+- (token,user,cb)
 - todo...
 
 LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.

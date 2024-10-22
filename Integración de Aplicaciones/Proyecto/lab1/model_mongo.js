@@ -123,6 +123,73 @@ function addUser(user, cb) {
     }   
 }
 
+/*           Función para Cambiar Usuarios              */
+/*        -----------------------------------           */
+/*   Esta función sirve para cambiar los datos de un    */
+/*       un usuario. Almacenado en la Aplicación        */
+/*                 Requiere un <token>                  */
+/* Requiere especificar el usuario que queremos cambiar */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        la lista de usuarios que hemos listado        */
+
+
+function updateUser(token, user, cb){
+    /* Realizamos una serie de comprobaciones para revisar el <user> que nos pasaron */
+    /* Si no tiene ningún parámetro devolveremos error. */
+    if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
+    (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
+    (user.password == undefined || !user.password)){
+        print(messages.add.no_param, messages.add.log.no_param, 0);
+        cb();
+    }else{
+        MongoClient.connect(url).then((client) => {      
+        
+            /* Crear un nuevo callback llamado _cb que hace lo mismo */
+            /* que el cb normal pero también cierra la conexión */       
+            _cb = function (err, res) {        
+                client.close();        
+                cb(err, res);      
+            }
+    
+             /* Crea la conexión a la base de datos */
+            let db = client.db(database);      
+            let users = db.collection(colecciones.users);   
+            
+            /* Revisamos con FindOne un1 valor con el <email> y <password> en la base de datos */
+            /* Para revisar si el usuario insertado ya existe en la Database */
+            /* En caso de no existir creamos uno nuevo y si existe devolver error */
+            users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
+                .then((_user) => { 
+                    /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
+                    /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
+                    if(_user){ 
+                        if (_user.email == user.email) print(messages.add.email_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        else if (_user.nick == user.nick) print(messages.add.nick_exists, (messages.add.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        _cb(null); 
+                    }       
+                    /* Si no existe, hay que crear el usuario y devolverlo por el callback */
+                    else {            
+                        user.following = []; 
+                        /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
+                        users.insertOne(user).then(result => {              
+                            _cb(null, {                
+                                id: result.insertedId.toHexString(), name: user.name,                 
+                                surname: user.surname, email: user.email, nick: user.nick              
+                            });            
+                        }).catch(err => {              
+                            _cb(err)            
+                        });          
+                    }        
+                }).catch(err => {          
+                    _cb(err)        
+                });      
+        }).catch(err => {          
+            _cb(err)        
+        });
+    }
+}
+
+
 /*            Función para Listar Usuarios              */
 /*        -----------------------------------           */
 /* Esta función sirve para listar a todos los usuarios  */

@@ -34,6 +34,19 @@ add = {
     
 }
 
+update = {
+    log : {
+        no_param : "La creación del usuario se ha anulado debido a que falta algún parámetro obligatorio.",
+        user_exists : "La creación del usuario se ha anulado debido a que ya existe un usuario registrado con email <%email%> o nick <%nick%> en la base de datos.",
+        user_updated : "La aplicación ha registrado a un nuevo usuario con email <%email%> y nick <%nick%> en la base de datos.",
+    },
+    no_param : ">> No se ha podido modificar el usuario porque faltan parámetros.",
+    email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado.",
+    nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado.",
+    user_updated : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
+    
+}
+
 list = {
     log : {
         no_logged_token : "El sistema ha rechazado una petición de listar usuarios por token inválido: <%token%>",
