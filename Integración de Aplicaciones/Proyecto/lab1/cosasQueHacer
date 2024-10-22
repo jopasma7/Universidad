@@ -6,4 +6,4 @@ LOGIN :
 - Otros comandos diferentes a los que puede ejecutar fuera.
 
 ADD : 
-- Mensaje para confirmar la creación de un usuario.
+- Mensaje para confirmar la creación de un usuario. (HECHO) -> Falta revisar que funcione bien el addUser

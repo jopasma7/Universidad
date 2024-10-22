@@ -105,11 +105,19 @@ function menu(args, cb) {
                 model.addUser(u, (err, u) =>{
                     /* Comprobación de si el método addUser devuelve un usuario undefined */
                     /* En caso de devolverlo es porque ya existe el usuario en la base de datos y devuelve error */
-                    if(u == undefined) cb();
-            
+                    if(u == undefined) {
+                        cb();
+                    }else{
+                        if(err) {
+                            console.log(err);
+                        }else {
+                            print(messages.add.user_registered, (messages.add.log.user_added.replace("%email%", args.e)
+                            .replace("%nick%", args.i)),1);
+                        }
+                        cb();
+                    }
 
-                    if(err) console.log(err);
-                    cb();
+                    
                 })
 
             break;

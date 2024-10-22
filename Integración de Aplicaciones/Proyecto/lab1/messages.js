@@ -20,6 +20,7 @@ add = {
     log : {
         no_param : "La creación del usuario se ha anulado debido a que falta algún parámetro obligatorio.",
         user_exists : "La creación del usuario se ha anulado debido a que ya existe un usuario registrado con email <%email%> o nick <%nick%> en la base de datos.",
+        user_added : "La aplicación ha registrado a un nuevo usuario con email <%email%> y nick <%nick%> en la base de datos.",
     },
     no_param : ">> No se ha podido crear el usuario porque faltan parámetros.",
     no_name : ">> Tienes que especificar un nombre para el registro.",
@@ -29,6 +30,7 @@ add = {
     no_nick : ">> Tienes que especificar un nick para el registro.",
     email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado.",
     nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado.",
+    user_registered : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
     
 }
 
