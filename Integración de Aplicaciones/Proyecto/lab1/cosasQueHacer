@@ -7,3 +7,49 @@ LOGIN :
 
 ADD : 
 - Mensaje para confirmar la creación de un usuario. (HECHO) -> Falta revisar que funcione bien el addUser
+
+LISTUSERS :
+- No funciona la query. 
+
+
+
+
+
+UPDATE :
+- todo...
+
+LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.
+- (token,opts, cb)
+- todo...
+
+LISTFOLLOWERS : Lista los usuarios que siguen al usuario  por token, con diversas opciones. El callback recibe un vector de usuarios.
+- (token,opts, cb)
+- todo...
+
+FOLLOW : El usuario solicita seguir a otro usuario...
+- (token,userId,cb)
+- todo...
+
+UNFOLLOW : El usuario deja de seguir a otro usuario...
+- (token,userId,cb)
+- todo...
+
+ADDTWEET : Añade un nuevo tweet. El callback recibe el tweet creado.
+- (token,content, cb)
+- todo...
+
+ADDRETWEET : El usuario autenticado reteetea otro tweet El callback recibe el retweet creado.
+- (token,tweetId, cb)
+- todo...
+
+LISTTWEETS : El usuario autenticado lista todos los tweets, con diversas opciones. El callback recibe un vector con los tweets.
+- (token,opts,cb)
+- todo...
+
+LIKE : El usuario indica que le gusta un tweet
+- (token,tweetId,cb)
+- todo...
+
+DISLIKE : El usuario indica que no le gusta un tweet
+- e(token,tweetId,cb)
+- todo...
