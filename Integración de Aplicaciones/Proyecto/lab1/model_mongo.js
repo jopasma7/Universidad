@@ -137,8 +137,15 @@ function addUser(user, cb) {
 function updateUser(token, user, cb){
     /* Realizamos una serie de comprobaciones para revisar el <user> que nos pasaron */
     /* Si tiene algún parámetro... procederemos a realizar el cambio. */
-    if(user.name != undefined || user.surname != undefined || user.email != undefined ||
-        user.password != undefined || user.nick != undefined){
+    let booleanUser = {name : false, surname : false, email : false, password : false, nick : false }
+   
+    if(user.name != undefined) booleanUser.name = true;
+    if(user.surname != undefined) booleanUser.surname = true;
+    if(user.email != undefined) booleanUser.email = true;
+    if(user.password != undefined) booleanUser.password = true;
+    if(user.nick != undefined) booleanUser.nick = true;
+    
+    if(user.name || user.surname || user.email || user.password || user.nick){
             MongoClient.connect(url).then((client) => {      
         
                 /* Crear un nuevo callback llamado _cb que hace lo mismo */
@@ -155,29 +162,38 @@ function updateUser(token, user, cb){
                 /* Recogemos con FindOne al usuario con el <token>:<token> en la base de datos */
                 /* Lo usaremos para hacer los cambios */
                 /* En caso de no existir creamos uno nuevo y si existe devolver error */
-                users.findOne({ id : token})
+                const consulta = {  _id: new mongodb.ObjectId(token)  };
+                users.findOne(consulta)
                     .then((_user) => { 
                         /* Si existe, Actualizaremos los datos que nos pasaron al usuario */
-                        if(_user){ 
-                            
+                        if(_user){                             
+                            if(booleanUser.name) _user.name = user.name;
+                            if(booleanUser.surname) _user.surname = user.surname;
+                            if(booleanUser.email) _user.email = user.email;
+                            if(booleanUser.password) _user.password = user.password;
+                            if(booleanUser.nick) _user.nick = user.nick;
 
-
-
-                            
-                        }       
-                        /* Si no existe, hay que crear el usuario y devolverlo por el callback */
-                        else {            
-                            user.following = []; 
-                            /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
-                            users.insertOne(user).then(result => {              
-                                _cb(null, {                
-                                    id: result.insertedId.toHexString(), name: user.name,                 
-                                    surname: user.surname, email: user.email, nick: user.nick              
-                                });            
+                            const update = { $set: { name: _user.name, surname: _user.surname, email: _user.email, password: _user.password, nick: _user.nick } };
+                            users.updateOne(consulta, update).then(result => { 
+                                if(result){
+                                    print(messages.modify.user_updated, (messages.modify.log.user_updated
+                                        .replace("%name%",_user.name).replace("%surname%",_user.surname)
+                                        .replace("%email%",_user.email).replace("%nick%",_user.nick).replace("%password%",_user.password)), 1);            
+                                    _cb(null, _user);
+                                }else{
+                                    _cb(err) 
+                                }                                           
                             }).catch(err => {              
                                 _cb(err)            
-                            });          
-                        }        
+                            });
+                            
+                        }       
+                        /* Si no existe, es que el token es inválido y devolveremos error */
+                        else {
+                            print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                            _cb() 
+                        }
+
                     }).catch(err => {          
                         _cb(err)        
                     });      
@@ -188,18 +204,6 @@ function updateUser(token, user, cb){
         /* Si no tiene ningún parámetro devolveremos error. */
         print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
         cb(null);
-    }
-    
-    
-    
-    
-    if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
-    (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
-    (user.password == undefined || !user.password)){
-        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
-        cb();
-    }else{
-        
     }
 }
 
@@ -232,7 +236,7 @@ function listUsers(token, opts, cb) {
         users.findOne({ _id: new mongodb.ObjectId(token) })
         .then(_user => {      
             if (!_user) {
-                print(messages.list.no_logged, (messages.list.log.no_logged_token.replace("%token%",token)),0);
+                print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
                 _cb(null);  
             }else {        
                 // adapt query  
@@ -306,5 +310,6 @@ function print(message, logMessage, color){
 module.exports = {
     addUser,    
     login,    
-    listUsers
+    listUsers,
+    updateUser
 }

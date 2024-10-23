@@ -27,7 +27,19 @@ function menu(args, cb) {
         if(token !== undefined){
             switch (args._[0]) { 
                 case "updateUser":
-                     /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */
+                     /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */  
+                    /* Crea el usuario <u> con lo valores proporcionados en el comando */
+                    let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
+    
+                    /* Llama a la función updateUser() del Model */
+                    model.updateUser(token, u, (err, u) =>{
+                        if(u != undefined) {
+                            if(user.nick != u.nick) rl.setPrompt(u.nick + " : "); // Cambiamos el Prompt.
+                            user = u; // Reajustamos el usuario.
+                        }                     
+                        cb();
+                        
+                    })
                 break;
                 case "listUsers": 
                     /* Comando: listUsers -q <query> -i <init> -c <count> */
@@ -79,7 +91,7 @@ function menu(args, cb) {
                             print((messages.login.welcome.replace("%user%", _user.name)), 
                                 (messages.login.log.user_join.replace("%user%", _user.name)
                                 .replace("%email%", _user.email)), 1);
-                            rl.setPrompt(user.name + " : "); 
+                            rl.setPrompt(user.nick + " : "); 
                             cb();
                         }
                     })

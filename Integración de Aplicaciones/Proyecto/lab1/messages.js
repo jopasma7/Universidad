@@ -23,7 +23,7 @@ modify = {
         cancel_add_no_param : "La creación del usuario se ha anulado debido a que falta algún parámetro obligatorio.",
         user_exists : "La creación / modificación del usuario se ha anulado debido a que ya existe un usuario registrado con email <%email%> o nick <%nick%> en la base de datos.",
         user_added : "La aplicación ha registrado a un nuevo usuario con email <%email%> y nick <%nick%> en la base de datos.",
-        user_updated : "La aplicación ha registrado a cambio en los datos del usuario con email <%email%> y nick <%nick%> y se ha aplicado en la base de datos.",
+        user_updated : "Cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
     },
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
     no_name : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nombre>",
@@ -37,12 +37,11 @@ modify = {
     user_updated : ">> Has actualizado tus datos de usuario.",
 }
 
-list = {
-    log : {
-        no_logged_token : "El sistema ha rechazado una petición de listar usuarios por token inválido: <%token%>",
-    },
+token = {
+    log_no_token : "El sistema ha rechazado una petición de listar usuarios por token inválido: <%token%>",
     no_logged : "Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
 }
+
 
 menu =
 `
@@ -75,5 +74,5 @@ Comandos Disponibles :
 `;
 
 module.exports = {
-    login, modify, list, menu, login_menu, prompt
+    login, modify, token, menu, login_menu, prompt
 }

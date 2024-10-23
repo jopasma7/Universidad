@@ -1,5 +1,8 @@
 
 
+GENERAL :
+- Comprobación de los parámetros, se puede poner doble -n por ejemplo.
+
 LOGIN : 
 - Cuando el usuario se logea en la aplicación. No debería poder volver a usar login.
 - Cuando está logueado en la aplicación el menú debería ser diferente.
@@ -12,12 +15,6 @@ LISTUSERS :
 - No funciona la query. 
 
 
-
-
-
-UPDATE :
-- (token,user,cb)
-- todo...
 
 LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.
 - (token,opts, cb)
