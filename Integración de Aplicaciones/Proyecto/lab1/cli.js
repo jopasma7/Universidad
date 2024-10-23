@@ -22,12 +22,11 @@ let token, user;
 function menu(args, cb) {    
     if (!args._.length || args._[0] == "") cb();   
     else {   
-        
         /* Lista de comandos que podremos ejecutar cuando el usuario esté logueado y tenga un Token */
         if(token !== undefined){
             switch (args._[0]) { 
                 case "updateUser":
-                     /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */  
+                    /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */  
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
     
@@ -63,7 +62,6 @@ function menu(args, cb) {
                 default: 
                     /* Muestra el menú principal de ayuda */
                     console.log(messages.menu);
-                    console.log(token);
                     cb();
             }
         /* Lista de comandos que podremos ejecutar sin Token. Menú de Login */

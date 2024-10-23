@@ -239,21 +239,22 @@ function listUsers(token, opts, cb) {
                 print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
                 _cb(null);  
             }else {        
-                // adapt query  
-                 
-                let _query = opts.q || {};        
-                for (let key in _query) {          
-                    if (Array.isArray(_query[key])) _query[key] = { $in: _query[key] };        
-                }        
-                // adapt options        
-                let _opts = {};        
-                if (opts.ini) _opts.skip = opts.ini;        
-                if (opts.count) _opts.limit = opts.count;        
-                if (opts.sort) _opts.sort = [[opts.sort.slice(1), (opts.sort.charAt(0) == '+' ? 1 : -1)]];  
-                
-                /* Busca en la base de datos la query seleccionada */ 
-                users.find(_query, _opts).toArray()
-                .then(_results => {          
+                // adapt query 
+                let jsonQuery = {};
+                if(opts.q){
+                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a las claves.
+                    .replace(/'/g, '"'); // Cambiar comillas simples por comillas dobles.
+                    jsonQuery = JSON.parse(qu); // Parseamos para convertirlo en un JSON.
+                }              
+            
+                let _query = jsonQuery;
+                // adapt options
+                let _opts = {};
+                if (opts.ini) _opts.skip = opts.ini;
+                if (opts.count) _opts.limit = opts.count;
+                if (opts.sort) _opts.sort = [[opts.sort.slice(1),
+                (opts.sort.charAt(0) == '+' ? 1 : -1)]];
+                users.find(_query, _opts).toArray().then(_results => {
                     let results = _results.map((user) => {            
                         return {              
                             id: user._id.toHexString(), name: user.name,              

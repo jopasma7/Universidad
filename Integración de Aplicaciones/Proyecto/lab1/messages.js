@@ -42,21 +42,37 @@ token = {
     no_logged : "Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
 }
 
-
+/*
+login -e test -p test
+listUsers -q {name:'test'}
+*/
 menu =
 `
-==================
-  MENÚ PRINCIPAL 
-==================
+====================================================================================================
+                                        MENÚ PRINCIPAL 
+====================================================================================================
 
-\x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -i \x1b[32m<init>\x1b[0m -c \x1b[32m<count>\x1b[0m
-\x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
-\x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
-\x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
-\x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
-\x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
+\x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                       
+\x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
+\x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
+\x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
+\x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m 
+\x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m 
 \x1b[33m7.\x1b[0m \x1b[32mhelp\x1b[0m - Mostrar el menú de ayuda.
 \x1b[33m8.\x1b[0m \x1b[32mexit\x1b[0m - Cerrar la aplicación.
+
+====================================================================================================
+                                    PARÁMETROS OPCIONALES 
+====================================================================================================
+
+||\x1b[90m    -q    \x1b[0m||\x1b[90m       Contiene una consulta query.        \x1b[0m||\x1b[90m -q {name:"test"} \x1b[0m
+||\x1b[90m    ini   \x1b[0m||\x1b[90m       Índice del primer resultado.        \x1b[0m||\x1b[90m -ini 10          \x1b[0m
+||\x1b[90m   count  \x1b[0m||\x1b[90m       Número máximo de resultados.        \x1b[0m||\x1b[90m -count 10        \x1b[0m
+||\x1b[90m    -n    \x1b[0m||\x1b[90m       Nombre del usuario.                 \x1b[0m||\x1b[90m -n Alejandro     \x1b[0m
+||\x1b[90m    -s    \x1b[0m||\x1b[90m       Apellido del usuario.               \x1b[0m||\x1b[90m -s Pastor        \x1b[0m
+||\x1b[90m    -e    \x1b[0m||\x1b[90m       Email del usuario.                  \x1b[0m||\x1b[90m -e test@gmail.com\x1b[0m
+||\x1b[90m    -p    \x1b[0m||\x1b[90m       Contraseña del usuario.             \x1b[0m||\x1b[90m -p password      \x1b[0m
+||\x1b[90m    -i    \x1b[0m||\x1b[90m       Nick del usuario.                   \x1b[0m||\x1b[90m -i Nick          \x1b[0m
 
 `;
 
