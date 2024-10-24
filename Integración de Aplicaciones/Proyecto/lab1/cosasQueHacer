@@ -5,6 +5,8 @@ GENERAL :
 - Revisar las querys (Si son vacías mandar un mensaje en vez de la tabla vacía)
 
 
+
+
 LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.
 - (token,opts, cb)
 - todo...
@@ -32,3 +34,23 @@ LIKE : El usuario indica que le gusta un tweet
 DISLIKE : El usuario indica que no le gusta un tweet
 - e(token,tweetId,cb)
 - todo...
+
+COSAS QUE TIENE :
+A NIVEL PROGRAMACIÓN:
+- Posibilidad de 'exit' desde cada menú.
+- Solucionados problemas con los espacios haciendo un match en vez de split (Minimist).
+- Posibilidad de ver ayuda para CADA comando con la opción --help bien explicado y detallado.
+- Revisados con paciencia los errores de cada comando y controlados con su própio mensaje identificativo.
+- LOG de mensajes para una posible pila de logs y guardado de los mismos.
+- Querys bien diseñadas y funcionales en los comandos de listar. 
+- Posibilidad de actualizar al usuario por parámetros una a uno de forma individual y no todos a la vez.
+- Cambio en el Prompt a la hora de loguearse o actualizar el nick de usuario.
+- Chequeos intensivos a la hora de actualizar datos (Cancelar si el email o nick ya está en uso por otro usuario).
+- Almacenamiento de Follow y Unfollow por ID de Mongo Object.
+
+A NIVEL VISUAL:
+- Diseño elegante.
+- Facilidad para no perderse entre los comandos.
+- Colores llamativos y organización cómoda para el usuario.
+- Múltiples Menús (Login y Principal)
+- Mensajes de bienvenida y salida.

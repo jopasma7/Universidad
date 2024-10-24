@@ -10,20 +10,21 @@ const rl = readline.createInterface({
 rl.setPrompt(messages.prompt); 
 console.log(messages.login_menu);
 rl.prompt(); 
-rl.on("line", line => {    
-    let args = minimist(fields = line.split(" "));    
-    menu(args, () => {        
-        rl.prompt();    
-    }); 
+rl.on("line", line => {   
+    if(line){
+        let args = minimist(fields = line.match(/'[^']*'|\S+/g));
+        menu(args, () => {        
+            rl.prompt();    
+        }); 
+    } else rl.prompt(); 
 }); 
 
 let token, user;
 
 function menu(args, cb) {    
     if (!args._.length || args._[0] == "") cb();   
-    else {   
-        /* Lista de comandos que podremos ejecutar cuando el usuario esté logueado y tenga un Token */
-        if(token !== undefined){
+    else {         
+        if(token !== undefined){  /* Lista de comandos que podremos ejecutar cuando el usuario esté logueado y tenga un Token */
             switch (args._[0]) { 
                 case "updateUser": /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */ 
                     /* Mostramos la ayuda del comando con el parámetro --help */
@@ -45,9 +46,9 @@ function menu(args, cb) {
                      if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.id == undefined){  print(messages.follow.no_userID, (messages.follow.log.err.replace("%nick%",user.nick)), 0);  cb(); break;  }
+                    if(args.id == undefined){  print(messages.cmd.follow.no_id, 0);  cb(); break;  }
                     /* Comprobar también si el ID introducido tiene 24 números */
-                    if(args.id.length !== 24){ print(messages.follow.no_length, (messages.follow.log.err.replace("%nick%",user.nick)), 0); cb(); break;   }
+                    if(args.id.length !== 24){ print(messages.cmd.follow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
                     model.follow(token, args.id, (err) =>{
@@ -60,9 +61,9 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.id == undefined){  print(messages.follows.unfollow_no_userID, (messages.follows.log.err.replace("%nick%",user.nick)), 0);  cb(); break;  }
+                    if(args.id == undefined){  print(messages.cmd.unfollow.no_id, 0);  cb(); break;  }
                     /* Comprobar también si el ID introducido tiene 24 números */
-                    if(args.id.length !== 24){ print(messages.follows.unfollow_no_length, (messages.follows.log.err.replace("%nick%",user.nick)), 0); cb(); break;   }
+                    if(args.id.length !== 24){ print(messages.cmd.unfollow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
                     model.unfollow(token, args.id, (err) =>{
@@ -70,9 +71,7 @@ function menu(args, cb) {
                         cb(); 
                     });
                 break;
-                case "listUsers": 
-                    /* Comando: listUsers -q <query> -i <init> -c <count> */
-                    
+                case "listUsers": /* Comando: listUsers -q <query> -i <init> -c <count> */
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.listUsers); cb(); break;  } 
 
@@ -80,108 +79,88 @@ function menu(args, cb) {
                     model.listUsers(token, args, (err, res) => {
                         if(err) console.log(err);
                         else if(res == undefined) cb();
-                        else {  
-                            console.table(res);                     
-                            cb();
-                        }
+                        else { console.table(res); cb(); }
                     })
-                break;   
-                default: 
-                    /* Muestra el menú principal de ayuda */
+                break;
+                case "listFollowing": /* Comando: listFollowing -q <query> -i <init> -c <count> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.listFollowing); cb(); break;  } 
+
+                    // Llama al método del Model para listar a los Usuarios.
+                    model.listFollowing(token, args, (err, res) => {
+                        if(err) console.log(err);
+                        else if(res == undefined) cb();
+                        else { console.table(res); cb(); }
+                    })
+                break;
+                case "exit":
+                    if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));
+                    else console.log(messages.cmd.exit.not_logged);
+                    user = undefined; token = undefined;
+                    process.exit(0);   
+                default: /* Muestra el menú principal de ayuda */
                     console.log(messages.menu);
                     cb();
             }
-        /* Lista de comandos que podremos ejecutar sin Token. Menú de Login */
-        }else{
+        
+        }else{ /* Lista de comandos que podremos ejecutar sin Token. Menú de Login */
             switch (args._[0]) {           
-                case "login": 
-                    /* Comando: login -e <email> -p <password> */
+                case "login": /* Comando: login -e <email> -p <password> */                   
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.login); cb(); break;  }
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.e == undefined){
-                        print(messages.login.no_email,messages.login.log.no_email_or_pass, 0);
-                        cb(); break;
-                    }else if(args.p == undefined){
-                        print(messages.login.no_password,messages.login.log.no_email_or_pass, 0);
-                        cb(); break;
-                    }
-    
-                    /* Llama al método login del Model */
-                    model.login(args.e, args.p, (err, _token, _user) => {
+                    if(args.e == undefined){ print(messages.cmd.login.no_email, 0);  cb(); break; }
+                    else if(args.p == undefined){ print(messages.cmd.login.no_password, 0); cb(); break; }
+     
+                    model.login(args.e, args.p, (err, _token, _user) => { /* Llama al método login del Model */
                         if(err) console.log(err);
-                        else if(_token == undefined){
-                            cb();
-                        }else {
-                            token = _token;
-                            user = _user;
-                            print((messages.login.welcome.replace("%user%", _user.name)), 
-                                (messages.login.log.user_join.replace("%user%", _user.name)
+                        else if(_token == undefined) cb();
+                        else {
+                            token = _token; user = _user;
+                            printWithLog((messages.cmd.login.success.replace("%nick%", _user.nick)), 
+                                (messages.log.user_join.replace("%nick%", _user.nick)
                                 .replace("%email%", _user.email)), 1);
-                            rl.setPrompt(user.nick + " : "); 
+                            rl.setPrompt("\x1b[1m\x1b[33m"+user.nick + "\x1b[0m : "); 
                             cb();
                         }
                     })
-                    
-                
+
                 break;    
                 case "exit":
-                    console.log("Bye");
+                    console.log(messages.cmd.exit.not_logged);
+                    user = undefined; token = undefined;
                     process.exit(0);
-                break;
-                
-                
-                case "addUser": 
-                    /* Agregar un usuario a la base de datos */
-                    
+                case "addUser": /* Comando: addeUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
                     
-                    /* Comando: addUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if((args.n == undefined) || !args.n){
-                        print(messages.modify.no_name, messages.modify.log.cancel_add_no_param, 0);
-                        cb(); break;                  
-                    }else if((args.s == undefined) || !args.s){
-                        print(messages.modify.no_surname, messages.modify.log.cancel_add_no_param, 0);
-                        cb(); break;
-                    }else if((args.e == undefined) || !args.e){
-                        print(messages.modify.no_email, messages.modify.log.cancel_add_no_param, 0);
-                        cb(); break;
-                    }else if((args.p == undefined) || !args.p){
-                        print(messages.modify.no_password, messages.modify.log.cancel_add_no_param, 0);
-                        cb(); break;
-                    }else if((args.i == undefined) || !args.i){
-                        print(messages.modify.no_nick, messages.modify.log.cancel_add_no_param, 0);
-                        cb(); break;
-                    }
+                    if((args.n == undefined) || !args.n){ print(messages.cmd.addUser.no_name, 0); cb(); break; }
+                    else if((args.s == undefined) || !args.s){ print(messages.cmd.addUser.no_surname, 0); cb(); break; }
+                    else if((args.e == undefined) || !args.e){ print(messages.cmd.addUser.no_email, 0); cb(); break; }
+                    else if((args.p == undefined) || !args.p){ print(messages.cmd.addUser.no_password, 0); cb(); break; }
+                    else if((args.i == undefined) || !args.i){ print(messages.cmd.addUser.no_nick, 0); cb(); break; }
     
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
-    
-                    /* Llama a la función addUser() del Model */
-                    model.addUser(u, (err, u) =>{
+      
+                    model.addUser(u, (err, u) =>{ /* Llamada a la función addUser() del Model */
                         /* Comprobación de si el método addUser devuelve un usuario undefined */
                         /* En caso de devolverlo es porque ya existe el usuario en la base de datos y devuelve error */
-                        if(u == undefined) {
-                            cb();
-                        }else{
-                            if(err) {
-                                console.log(err);
-                            }else {
-                                print(messages.modify.user_registered, (messages.modify.log.user_added.replace("%email%", args.e)
-                                .replace("%nick%", args.i)),1);
+                        if(u != undefined) {
+                            if(err) console.log(err);
+                            else {
+                                printWithLog(messages.cmd.addUser.success, (messages.log.new_user
+                                    .replace("%name%", args.n).replace("%surname%", args.s)
+                                    .replace("%email%", args.e).replace("%password%", args.p)
+                                    .replace("%nick%", args.i)),1);
                             }
-                            cb();
                         }
-    
-                        
+                        cb();   
                     })
-    
                 break;
-                default: 
-                    /* Muestra el menú de ayuda de login */
+                default: /* Muestra el menú de ayuda de login */
                     console.log(messages.login_menu);
                     cb();
             }
@@ -190,36 +169,18 @@ function menu(args, cb) {
     } 
 }
 
-
-/* Mensaje de info para los mensajes informativos. >> Color azul */
-function info(message){
-    console.log('\x1b[34m[Info]\x1b[0m ' + message);
+function printWithLog(message, logMessage, color){
+    print(message, color);
+    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
 }
 
-/* Mensaje de éxitos para los resultados correctos. >> Color verde */
-function success(message){
-    console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
-}
-
-/* Mensaje de error para los resultados erróneos. >> Color rojo */
-function error(message){
-    //console.log('\x1b[31m%s\x1b[0m',message);
-    console.log('\x1b[31m[Error]\x1b[0m ' + message);
-}
-
-/* Mensaje de LOG para los resultados erróneos. >> Color gris y cursiva */
-function log(message){
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+message+'\x1b[0m');
-}
-
-function print(message, logMessage, color){
+function print(message, color){
     switch(color){
-        case 0: error(message);
+        case 0: console.log('\x1b[31m[Error]\x1b[0m ' + message);
         break;
-        case 1: success(message);
+        case 1: console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
         break;
-        case 2: info(message);
+        case 2: console.log('\x1b[34m[Info]\x1b[0m ' + message);
         break;
     }
-    log(logMessage);
 }

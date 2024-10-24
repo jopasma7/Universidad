@@ -35,8 +35,8 @@ function login(email, password, cb) {
         col.findOne({ email: email, password: password }).then(_user => {      
             /* Revisamos si el usuario NO está registrado en la base de datos */
             if (!_user) {
-                print(messages.login.invalid_credentials, 
-                (messages.login.log.invalid_credentials.replace("%email%", email)
+                printWithLog(messages.cmd.login.invalid_credentials, 
+                (messages.log.invalid_credentials.replace("%email%", email)
                 .replace("%password%", password)), 0);              
                 _cb(null); // Devuelve un Err:null, Token:undefined y User:undefined
             }else {      
@@ -74,7 +74,7 @@ function addUser(user, cb) {
     if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
     (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
     (user.password == undefined || !user.password)){
-        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
+        print(messages.cmd.addUser.no_param, 0);
         cb();
     }else{
         MongoClient.connect(url).then((client) => {      
@@ -98,13 +98,14 @@ function addUser(user, cb) {
                     /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
                     /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
                     if(_user){ 
-                        if (_user.email == user.email) print(messages.modify.email_exists, (messages.modify.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
-                        else if (_user.nick == user.nick) print(messages.modify.nick_exists, (messages.modify.log.user_exists.replace("%email%",user.email).replace("%nick%",user.nick)), 0);
+                        if (_user.email == user.email) print(messages.cmd.addUser.email_exists, 0);
+                        else if (_user.nick == user.nick) print(messages.cmd.addUser.nick_exists, 0);
                         _cb(null); 
                     }       
                     /* Si no existe, hay que crear el usuario y devolverlo por el callback */
                     else {            
                         user.following = []; 
+                        user.followers = []; 
                         /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
                         users.insertOne(user).then(result => {              
                             _cb(null, {                
@@ -159,9 +160,28 @@ function updateUser(token, user, cb){
                 let db = client.db(database);      
                 let users = db.collection(colecciones.users);   
                 
+                // Si nos pidieron actualizar el parámetro Email.
+                // Hay que realizar una búsqueda en la base de datos por si coincide con algún usuario ya registrado.
+                if(booleanUser.email){
+                    users.findOne({ email: user.email }).then((j) => {                        
+                        if(j){ print(messages.cmd.updateUser.email_exists,0); _cb(null);
+                            return;
+                        }              
+                    });    
+                }
+
+                // Si nos pidieron actualizar el parámetro nick.
+                // Hay que realizar una búsqueda en la base de datos por si coincide con algún usuario ya registrado.
+                if(booleanUser.nick){
+                    users.findOne({ nick: user.nick }).then((j) => {                        
+                        if(j){ print(messages.cmd.updateUser.nick_exists,0); _cb(null);
+                            return;
+                        }              
+                    });    
+                }
+                
                 /* Recogemos con FindOne al usuario con el <token>:<token> en la base de datos */
                 /* Lo usaremos para hacer los cambios */
-                /* En caso de no existir creamos uno nuevo y si existe devolver error */
                 const consulta = {  _id: new mongodb.ObjectId(token)  };
                 users.findOne(consulta)
                     .then((_user) => { 
@@ -176,7 +196,7 @@ function updateUser(token, user, cb){
                             const update = { $set: { name: _user.name, surname: _user.surname, email: _user.email, password: _user.password, nick: _user.nick } };
                             users.updateOne(consulta, update).then(result => { 
                                 if(result){
-                                    print(messages.modify.user_updated, (messages.modify.log.user_updated
+                                    printWithLog(messages.cmd.updateUser.success, (messages.log.new_update
                                         .replace("%name%",_user.name).replace("%surname%",_user.surname)
                                         .replace("%email%",_user.email).replace("%nick%",_user.nick).replace("%password%",_user.password)), 1);            
                                     _cb(null, _user);
@@ -190,7 +210,7 @@ function updateUser(token, user, cb){
                         }       
                         /* Si no existe, es que el token es inválido y devolveremos error */
                         else {
-                            print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                            print(messages.cmd.err.no_token, 0);
                             _cb() 
                         }
 
@@ -202,7 +222,7 @@ function updateUser(token, user, cb){
             });
     }else{
         /* Si no tiene ningún parámetro devolveremos error. */
-        print(messages.modify.no_param, messages.modify.log.cancel_add_no_param, 0);
+        print(messages.cmd.updateUser.no_param, 0);
         cb(null);
     }
 }
@@ -236,35 +256,116 @@ function listUsers(token, opts, cb) {
         users.findOne({ _id: new mongodb.ObjectId(token) })
         .then(_user => {      
             if (!_user) {
-                print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                print(messages.cmd.err.no_token, 0);
                 _cb(null);  
-            }else {        
-                // adapt query 
-                let jsonQuery = {};
-                if(opts.q){
-                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a las claves.
-                    .replace(/'/g, '"'); // Cambiar comillas simples por comillas dobles.
-                    jsonQuery = JSON.parse(qu); // Parseamos para convertirlo en un JSON.
-                }              
-            
-                let _query = jsonQuery;
-                // adapt options
-                let _opts = {};
-                if (opts.ini) _opts.skip = opts.ini;
-                if (opts.count) _opts.limit = opts.count;
-                if (opts.sort) _opts.sort = [[opts.sort.slice(1),
-                (opts.sort.charAt(0) == '+' ? 1 : -1)]];
-                users.find(_query, _opts).toArray().then(_results => {
-                    let results = _results.map((user) => {            
-                        return {              
-                            id: user._id.toHexString(), name: user.name,              
-                            surname: user.surname, email: user.email, nick: user.nick            
-                        };          
-                    });          
-                    _cb(null, results);        
+            }else { 
+                 let jsonQuery = {};
+                 if(opts.q){
+                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+                    .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
+                    .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
+                     
+                    try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+                     catch(err){
+                        print(messages.cmd.listUsers.invalid_format, 0); // Mensaje de inválid format JSON.
+                        _cb(null);
+                        return;
+                     }          
+                 }                          
+                 let _query = jsonQuery; let _opts = {};
+                 if (opts.i) _opts.skip = opts.i;
+                 if (opts.c) _opts.limit = opts.c;
+                 if (opts.s) _opts.s = [[opts.s.slice(1),
+                 (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                 users.find(_query, _opts).toArray().then(_results => {
+                     let results = _results.map((user) => {            
+                         return {              
+                             id: user._id.toHexString(), name: user.name,              
+                             surname: user.surname, email: user.email, nick: user.nick            
+                         };          
+                     });          
+                 _cb(null, results);        
+                 }).catch(err => {          
+                     _cb(err)        
+                 });                  
+            }    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
+/*       Función para Listar Usuarios que sigues        */
+/*        -----------------------------------           */
+/* Esta función sirve para listar a todos los usuarios  */
+/*         a los que el usuario sigue (follow)          */
+/*                 Requiere un <token>                  */
+/*    Se pueden especificar <opts> que son opciones.    */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        la lista de usuarios que hemos listado        */
+
+function listFollowing(token, opts, cb) {  
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */  
+        _cb = function (err, res) {      
+            client.close();      
+            cb(err, res);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users);    
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => {      
+            if (!_user) {
+                print(messages.cmd.err.no_token, 0);
+                _cb(null);  
+            }else { 
+                let followingList = _user.following;
+                console.log("user: "+_user.following);
+                console.log("following array: "+followingList);
+                users.find({ following: { $in: followingList } }).toArray().then(users => { // Esto nos da un vector de usuarios.
+                    console.log("Usuarios que sigues: "+users);
                 }).catch(err => {          
                     _cb(err)        
-                });      
+                });
+
+                let jsonQuery = {};
+                if(opts.q){
+                   const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+                   .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
+                   .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
+                     
+                    try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+                    catch(err){
+                        print(messages.cmd.listUsers.invalid_format, 0); // Mensaje de inválid format JSON.
+                        _cb(null);
+                        return;
+                    }          
+                 }                          
+                 let _query = jsonQuery; let _opts = {};
+                 if (opts.i) _opts.skip = opts.i;
+                 if (opts.c) _opts.limit = opts.c;
+                 if (opts.s) _opts.s = [[opts.s.slice(1),
+                 (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                 users.find(_query, _opts).toArray().then(_results => {
+                     let results = _results.map((user) => {            
+                         return {              
+                             id: user._id.toHexString(), name: user.name,              
+                             surname: user.surname, email: user.email, nick: user.nick            
+                         };          
+                     });          
+                 _cb(null, results);        
+                 }).catch(err => {          
+                     _cb(err)        
+                 });                  
             }    
         }).catch(err => {      
             _cb(err)    
@@ -300,29 +401,41 @@ function follow(token, userId, cb){
         .then(_user => {      
             if (!_user) {
                 /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-                print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                print(messages.cmd.err.no_token, 0);
                 _cb(null);  
             }else {        
                 /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
                 users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
                     if (!_userId) {
                         /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
-                        print((messages.follows.no_exists.replace("%userID%",userId)), (messages.follows.log.err.replace("%nick%",_user.nick)),0);
+                        print((messages.cmd.follow.no_exists.replace("%userID%",userId)), 0);
                         _cb(null);  
                     }else {        
                         /* Como si que está en la base de datos, procederemos a hacer el follow */
                         /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario */
-                        if(!_userId.following.includes(_user.nick)){
+                        if(!_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
                              /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                            users.updateOne(
-                                { _id: new mongodb.ObjectId(userId) }, 
-                                { $push: { following: _user.nick } } /* Agrega el nuevo usuario al array */
+                            users.updateOne({ _id: new mongodb.ObjectId(userId) }, 
+                                { $push: { followers: _user._id } } /* Agrega el nuevo usuario al array de followers*/
                             ).then(result => { 
-                                if(result){
-                                    /* Todo correcto : Manda un mensaje de Follow Complete */
-                                    print((messages.follows.complete.replace("%nick%",_userId.nick)),
-                                    (messages.follows.log.complete.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
-                                    _cb(null);
+                                if(result){                                    
+                                    /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                                    /* Ahora falta agregar su nombre a nuestra lista de following */
+                                    users.updateOne({ _id: new mongodb.ObjectId(token) }, 
+                                        { $push: { following: _userId._id } }).then(resu => { /* Agrega el nuevo usuario al array de followings*/
+                                        if(resu){
+                                            /* Todo correcto : Manda un mensaje de Follow Complete */
+                                            printWithLog((messages.cmd.follow.success.replace("%nick%",_userId.nick)),
+                                            (messages.log.new_follow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
+                                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                                            /* Ahora falta agregar su nombre a nuestra lista de following */
+                                            _cb(null);
+                                        }else{
+                                            _cb(err) 
+                                        }                                           
+                                    }).catch(err => {              
+                                        _cb(err)            
+                                    });
                                 }else{
                                     _cb(err) 
                                 }                                           
@@ -331,7 +444,7 @@ function follow(token, userId, cb){
                             });    
                         }else{
                             /* Error : Ya tienes follow con esa persona */
-                            print(messages.follows.already_follow,(messages.follows.log.err.replace("%nick%",_user.nick)),0);
+                            print(messages.cmd.follow.already_follow, 0);
                             _cb(null);
                         }                      
                     }    
@@ -373,29 +486,40 @@ function unfollow(token, userId, cb){
         .then(_user => {      
             if (!_user) {
                 /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-                print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                print(messages.cmd.err.no_token, 0);
                 _cb(null);  
             }else {        
                 /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
                 users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
                     if (!_userId) {
                         /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
-                        print((messages.follows.no_exists.replace("%userID%",userId)), (messages.follows.log.err.replace("%nick%",_user.nick)),0);
+                        print((messages.cmd.unfollow.no_exists.replace("%userID%",userId)), 0);
                         _cb(null);  
                     }else {        
                         /* Como si que está en la base de datos, procederemos a hacer el unfollow */
                         /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario y eliminarlo si lo es */
-                        if(_userId.following.includes(_user.nick)){
+                        if(_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
                              /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                            users.updateOne(
-                                { _id: new mongodb.ObjectId(userId) }, 
-                                { $pull: { following: _user.nick } } /* Agrega el nuevo usuario al array */
+                            users.updateOne({ _id: new mongodb.ObjectId(userId) }, 
+                                { $pull: { followers: _user._id } } /* Agrega el nuevo usuario al array */
                             ).then(result => { 
                                 if(result){
-                                    /* Todo correcto : Manda un mensaje de UnFollow Complete */
-                                    print((messages.follows.unfollow_complete.replace("%nick%",_userId.nick)),
-                                    (messages.follows.log.unfollow_complete.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
-                                    _cb(null);
+                                    /* Ya tenemos nuestro id removido en la lista de followers del usuario. */
+                                    /* Ahora falta remover su id de nuestra lista de following */                            
+                                    users.updateOne({ _id: new mongodb.ObjectId(token) }, 
+                                        { $pull: { following: _userId._id } } /* Agrega el nuevo usuario al array */
+                                    ).then(resu => { 
+                                        if(resu){
+                                            /* Todo correcto : Manda un mensaje de UnFollow Complete */
+                                            printWithLog((messages.cmd.unfollow.success.replace("%nick%",_userId.nick)),
+                                            (messages.log.new_unfollow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
+                                            _cb(null);
+                                        }else{
+                                            _cb(err) 
+                                        }                                           
+                                    }).catch(err => {              
+                                        _cb(err)            
+                                    });     
                                 }else{
                                     _cb(err) 
                                 }                                           
@@ -404,7 +528,7 @@ function unfollow(token, userId, cb){
                             });    
                         }else{
                             /* Error : No sigues a esa persona */
-                            print(messages.follows.not_follow,(messages.follows.log.err.replace("%nick%",_user.nick)),0);
+                            print(messages.cmd.unfollow.not_follow, 0);
                             _cb(null);
                         }                      
                     }    
@@ -420,37 +544,22 @@ function unfollow(token, userId, cb){
     }); 
 }
 
-// Mensaje de info para los mensajes informativos. >> Color azul.
-function info(message){
-    console.log('\x1b[34m[Info]\x1b[0m ' + message);
+/* Imprime un mensaje con colores más un Log al final */
+function printWithLog(message, logMessage, color){
+    print(message, color);
+    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
 }
 
-// Mensaje de éxitos para los resultados correctos. >> Color verde.
-function success(message){
-    console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
-}
-
-// Mensaje de error para los resultados erróneos. >> Color rojo.
-function error(message){
-    //console.log('\x1b[31m%s\x1b[0m',message);
-    console.log('\x1b[31m[Error]\x1b[0m ' + message);
-}
-
-// Mensaje de LOG para los resultados erróneos. >> Color rojo y cursiva.
-function log(message){
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+message+'\x1b[0m');
-}
-
-function print(message, logMessage, color){
+/* Imprime un mensaje con colores */
+function print(message, color){
     switch(color){
-        case 0: error(message);
+        case 0: console.log('\x1b[31m[Error]\x1b[0m ' + message);
         break;
-        case 1: success(message);
+        case 1: console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
         break;
-        case 2: info(message);
+        case 2: console.log('\x1b[34m[Info]\x1b[0m ' + message);
         break;
     }
-    log(logMessage);
 }
 
 
@@ -460,5 +569,6 @@ module.exports = {
     listUsers,
     updateUser,
     follow,
-    unfollow
+    unfollow,
+    listFollowing,
 }

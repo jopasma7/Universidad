@@ -5,43 +5,24 @@
 /*      forma global de la aplicación Twitter Lite      */
 
 prompt = "\x1b[34m[TW Lite]\x1b[0m : "
-login = {
-    log : {
-        invalid_credentials : "Registrando autentificación fallida para el email: <%email%> y password: <%password%>",
-        no_email_or_pass : "Autentificación fallida por falta del parámetro <email> o <password>.",
-        user_join : "Acaba de acceder a la plataforma el usuario <%user%> con email: <%email%>",
-    },
+log = {
+    invalid_credentials : "Registrando autentificación fallida para el email: <%email%> y password: <%password%>",
+    user_join : "Acaba de acceder a la plataforma el usuario <%nick%> con email: <%email%>",
+    follows_err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
+    new_follow : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
+    new_unfollow : "Se ha eliminado el follow del usuario con <nick>:%user_nick% para el usuario con <nick>:%target_nick%.",
+    new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
+    new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
+}
+
+cmd = {
+  login : {
     invalid_credentials : ">> El usuario o la contraseña especificados no existen en nuestra base de datos.",
     no_email : ">> Necesitas especificar un email. \x1b[33mComando\x1b[0m: \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m ",
     no_password : ">> Debes introducir una contraseña. \x1b[33mComando\x1b[0m: \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m o \x1b[32m<password>\x1b[0m.",
-    welcome : ">> Bievenido a Twitter %user%"
-} 
-
-follows = {
-    log : {
-        err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
-        complete : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
-        unfollow_complete : "Se ha registrado un nuevo unfollow para del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
-    },
-    no_userID : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    unfollow_no_userID : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    unfollow_no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
-    already_follow : ">> Ya estás siguiendo a este usuario.",
-    not_follow : ">> Todavía no sigues a ese usuario. Empieza a seguirle con el \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    complete : ">> Has empezado a seguir al usuario con <nick> : %nick%",
-    unfollow_complete : ">> Dejaste de seguir al usuario con <nick> : %nick%",
-}
-
-
-modify = {
-    log : {
-        cancel_add_no_param : "La creación del usuario se ha anulado debido a que falta algún parámetro obligatorio.",
-        user_exists : "La creación / modificación del usuario se ha anulado debido a que ya existe un usuario registrado con email <%email%> o nick <%nick%> en la base de datos.",
-        user_added : "La aplicación ha registrado a un nuevo usuario con email <%email%> y nick <%nick%> en la base de datos.",
-        user_updated : "Cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
-    },
+    success : ">> Bievenido a Twitter \x1b[1m\x1b[33m%nick%\x1b[0m"
+  },
+  addUser : {
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
     no_name : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nombre>",
     no_surname : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <apellido>",
@@ -50,18 +31,44 @@ modify = {
     no_nick : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nick>",
     email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado.",
     nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado.",
-    user_registered : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
-    user_updated : ">> Has actualizado tus datos de usuario.",
-}
-
-token = {
-    log_no_token : "El sistema ha rechazado una petición de listar usuarios por token inválido: <%token%>",
-    no_logged : "Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
+    success : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
+  },
+  updateUser : {
+    no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
+    email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado. Por favor elige otro diferente.",
+    nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado. Por favor elige otro diferente.",
+    success : ">> Has actualizado tus datos de usuario.",
+  },
+  listUsers : {
+    invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistUsers --help\x1b[0m para más información.",
+  },
+  follow : {
+    no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
+    already_follow : ">> Ya estás siguiendo a este usuario.",
+    success : ">> Has empezado a seguir al usuario con <nick> : %nick%",
+  },
+  unfollow : {
+    no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
+    not_follow : ">> Todavía no sigues a ese usuario. Empieza a seguirle con el \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    success : ">> Dejaste de seguir al usuario con <nick> : %nick%",
+  },
+  err : {
+    no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
+  },
+  exit : {
+    logged : "\x1b[34m>> ¿Ya te marchas \x1b[33m%nick%\x1b[0m\x1b[34m? ¡Te veo más tarde!\x1b[0m",
+    not_logged : "\x1b[34m>> ¿Tan pronto te vas? Si todavía no accediste a la APP. Bueno... ¡¡Nos vemos pronto!!\x1b[0m"
+  } 
 }
 
 /*
 login -e test -p test
-listUsers -q {name:'test'}
+listUsers -q '{ name : "test" }'
 */
 menu =
 `
@@ -78,21 +85,21 @@ menu =
 \x1b[33m7.\x1b[0m \x1b[32mexit\x1b[0m
 
 Para más información acerca de un comando específico utiliza \x1b[33m<cmd> --help\x1b[0m
-Esto te ayudará a comprender con más detalle valor de cada comando.
+Esto te ayudará a comprender con más detalle los valores de cada comando.
 
 `;
 
 login_menu =
 `
-Bienvenido a la Aplicación de Twitter Lite.
-
-Comandos Disponibles :
-
+=======================================================================
+                            LOGIN MENÚ  
+=======================================================================
 \x1b[33m1.\x1b[0m \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m
 \x1b[33m2.\x1b[0m \x1b[32maddUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
-\x1b[33m3.\x1b[0m \x1b[32mhelp\x1b[0m - Mostrar el menú de ayuda.
-\x1b[33m4.\x1b[0m \x1b[32mexit\x1b[0m - Cerrar la aplicación.
+\x1b[33m3.\x1b[0m \x1b[32mexit\x1b[0m
 
+Para más información acerca de un comando específico utiliza \x1b[33m<cmd> --help\x1b[0m
+Esto te ayudará a comprender con más detalle los valores de cada comando.
 `;
 
 help = {
@@ -122,6 +129,8 @@ help = {
     |-e| : <email>      ->  Correo electrónico vinculado a la cuenta de usuario.
     |-p| : <password>   ->  Contraseña deseada para el usuario.
     |-i| : <nick>       ->  Apodo o alias deseado dentro de la aplicación.
+
+ • \x1b[33mRequisitos\x1b[0m: Todos los parámetros son necesarios para la creación de un nuevo usuario.
 
  NOTA: \x1b[90mLa ejecución del comando no está disponible una vez autenticado.\x1b[0m
 `,
@@ -223,5 +232,5 @@ help = {
 }
 
 module.exports = {
-    login, modify, token, menu, login_menu, prompt, help, follows
+    prompt, menu, login_menu, help, log, cmd
 }
