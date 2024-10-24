@@ -40,6 +40,27 @@ function menu(args, cb) {
                         
                     })
                 break;
+                case "follow":
+                    /* Comando: follow -id <userID> */
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    /* Comprobar también si el ID introducido es ENTERO */
+                    if(args.id == undefined){
+                        print(messages.follow.no_userID, (messages.follow.log.err.replace("%nick%",user.nick)), 0);
+                        cb(); break;
+                    }
+                    if(args.id.length !== 24){
+                        print(messages.follow.no_length, (messages.follow.log.err.replace("%nick%",user.nick)), 0);
+                        cb(); break;
+                    }
+
+                    /* Tenemos los parámetros correctamente entonces le pasamos el método */
+                    model.follow(token, args.id, (err) =>{
+                        if(err) console.log(err.stack);
+                        cb(); 
+                    });
+                    
+
+                break;
                 case "listUsers": 
                     /* Comando: listUsers -q <query> -i <init> -c <count> */
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */

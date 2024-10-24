@@ -274,6 +274,79 @@ function listUsers(token, opts, cb) {
     }); 
 }
 
+/*            Función para seguir Usuarios              */
+/*        -----------------------------------           */
+/*     Esta función sirve para seguir a otro usuario    */
+/*                 Requiere un <token>                  */
+/*    Se pueden especificar <opts> que son opciones.    */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        si funcionó la petición de follow o no        */
+function follow(token, userId, cb){
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */  
+        _cb = function (err) {      
+            client.close();      
+            cb(err);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users);    
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => {      
+            if (!_user) {
+                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+                print(messages.token.no_logged, (messages.token.log_no_token.replace("%token%",token)),0);
+                _cb(null);  
+            }else {        
+                /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
+                users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
+                    if (!_userId) {
+                        /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
+                        print((messages.follow.no_exists.replace("%userID%",userId)), (messages.follow.log.err.replace("%nick%",_user.nick)),0);
+                        _cb(null);  
+                    }else {        
+                        /* Como si que está en la base de datos, procederemos a hacer el follow */
+                        /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario */
+                        if(!_userId.following.includes(_user.nick)){
+                             /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                            users.updateOne(
+                                { _id: new mongodb.ObjectId(userId) }, /* Filtra el documento que deseas actualizar */
+                                { $push: { following: _user.nick } } /* Agrega el nuevo interés al array */
+                            ).then(result => { 
+                                if(result){
+                                    /* Todo correcto : Manda un mensaje de Follow Complete */
+                                    print((messages.follow.complete.replace("%nick%",_userID.nick)),(messages.follow.log.complete.replace("%nick%",_userID.nick)),1);
+                                    _cb(null);
+                                }else{
+                                    _cb(err) 
+                                }                                           
+                            }).catch(err => {              
+                                _cb(err)            
+                            });    
+                        }else{
+                            /* Error : Ya tienes follow con esa persona */
+                            print(messages.follow.already_follow,messages.follow.log.err,0);
+                            _cb(null);
+                        }                      
+                    }    
+                }).catch(err => {      
+                    _cb(err)    
+                });
+            }    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
 // Mensaje de info para los mensajes informativos. >> Color azul.
 function info(message){
     console.log('\x1b[34m[Info]\x1b[0m ' + message);
@@ -312,5 +385,6 @@ module.exports = {
     addUser,    
     login,    
     listUsers,
-    updateUser
+    updateUser,
+    follow
 }

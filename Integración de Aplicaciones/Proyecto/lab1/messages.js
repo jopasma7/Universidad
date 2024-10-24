@@ -17,6 +17,18 @@ login = {
     welcome : ">> Bievenido a Twitter %user%"
 } 
 
+follow = {
+    log : {
+        err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow a otro usuario.",
+        complete : "Se ha registrado un nuevo follow para el usuario con <nick>:%nick%.",
+    },
+    no_userID : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
+    already_follow : ">> Ya estás siguiendo a este usuario.",
+    complete : ">> Has empezado a seguir al usuario con <nick> : %nick%",
+}
+
 
 modify = {
     log : {
@@ -35,6 +47,15 @@ modify = {
     nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado.",
     user_registered : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
     user_updated : ">> Has actualizado tus datos de usuario.",
+}
+
+not_param = {
+    log : ">> El sistema ha registrado una acción inválida para el usuario con <nick>:%nick% por falta de parámetros.",
+    name : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nombre>",
+    surname : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <surname>",
+    email : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <email>",
+    password : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <password>",
+    nick : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nick>",
 }
 
 token = {
@@ -56,7 +77,7 @@ menu =
 \x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
 \x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
 \x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
-\x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m 
+\x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
 \x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m 
 \x1b[33m7.\x1b[0m \x1b[32mhelp\x1b[0m - Mostrar el menú de ayuda.
 \x1b[33m8.\x1b[0m \x1b[32mexit\x1b[0m - Cerrar la aplicación.
@@ -73,6 +94,7 @@ menu =
 ||\x1b[90m    -e    \x1b[0m||\x1b[90m       Email del usuario.                  \x1b[0m||\x1b[90m -e test@gmail.com\x1b[0m
 ||\x1b[90m    -p    \x1b[0m||\x1b[90m       Contraseña del usuario.             \x1b[0m||\x1b[90m -p password      \x1b[0m
 ||\x1b[90m    -i    \x1b[0m||\x1b[90m       Nick del usuario.                   \x1b[0m||\x1b[90m -i Nick          \x1b[0m
+||\x1b[90m   --id   \x1b[0m||\x1b[90m       ID única del usuario.               \x1b[0m||\x1b[90m --id 93121232132 \x1b[0m
 
 `;
 
@@ -90,5 +112,5 @@ Comandos Disponibles :
 `;
 
 module.exports = {
-    login, modify, token, menu, login_menu, prompt
+    login, modify, token, menu, login_menu, prompt, not_param, follow
 }
