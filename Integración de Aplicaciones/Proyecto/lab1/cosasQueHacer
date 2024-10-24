@@ -2,18 +2,7 @@
 
 GENERAL :
 - Comprobación de los parámetros, se puede poner doble -n por ejemplo.
-
-LOGIN : 
-- Cuando el usuario se logea en la aplicación. No debería poder volver a usar login.
-- Cuando está logueado en la aplicación el menú debería ser diferente.
-- Otros comandos diferentes a los que puede ejecutar fuera.
-
-ADD : 
-- Mensaje para confirmar la creación de un usuario. (HECHO) -> Falta revisar que funcione bien el addUser
-
-LISTUSERS :
-- No funciona la query. 
-
+- Revisar las querys (Si son vacías mandar un mensaje en vez de la tabla vacía)
 
 
 LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.
@@ -22,14 +11,6 @@ LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector
 
 LISTFOLLOWERS : Lista los usuarios que siguen al usuario  por token, con diversas opciones. El callback recibe un vector de usuarios.
 - (token,opts, cb)
-- todo...
-
-FOLLOW : El usuario solicita seguir a otro usuario...
-- (token,userId,cb)
-- todo...
-
-UNFOLLOW : El usuario deja de seguir a otro usuario...
-- (token,userId,cb)
 - todo...
 
 ADDTWEET : Añade un nuevo tweet. El callback recibe el tweet creado.

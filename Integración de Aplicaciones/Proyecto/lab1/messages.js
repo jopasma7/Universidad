@@ -17,16 +17,21 @@ login = {
     welcome : ">> Bievenido a Twitter %user%"
 } 
 
-follow = {
+follows = {
     log : {
-        err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow a otro usuario.",
-        complete : "Se ha registrado un nuevo follow para el usuario con <nick>:%nick%.",
+        err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
+        complete : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
+        unfollow_complete : "Se ha registrado un nuevo unfollow para del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
     },
     no_userID : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    unfollow_no_userID : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    unfollow_no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
     already_follow : ">> Ya estás siguiendo a este usuario.",
+    not_follow : ">> Todavía no sigues a ese usuario. Empieza a seguirle con el \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     complete : ">> Has empezado a seguir al usuario con <nick> : %nick%",
+    unfollow_complete : ">> Dejaste de seguir al usuario con <nick> : %nick%",
 }
 
 
@@ -49,15 +54,6 @@ modify = {
     user_updated : ">> Has actualizado tus datos de usuario.",
 }
 
-not_param = {
-    log : ">> El sistema ha registrado una acción inválida para el usuario con <nick>:%nick% por falta de parámetros.",
-    name : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nombre>",
-    surname : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <surname>",
-    email : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <email>",
-    password : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <password>",
-    nick : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nick>",
-}
-
 token = {
     log_no_token : "El sistema ha rechazado una petición de listar usuarios por token inválido: <%token%>",
     no_logged : "Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
@@ -69,32 +65,20 @@ listUsers -q {name:'test'}
 */
 menu =
 `
-====================================================================================================
-                                        MENÚ PRINCIPAL 
-====================================================================================================
+=======================================================================
+                            MENÚ PRINCIPAL 
+=======================================================================
 
 \x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                       
 \x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
 \x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
 \x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
 \x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
-\x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m 
-\x1b[33m7.\x1b[0m \x1b[32mhelp\x1b[0m - Mostrar el menú de ayuda.
-\x1b[33m8.\x1b[0m \x1b[32mexit\x1b[0m - Cerrar la aplicación.
+\x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
+\x1b[33m7.\x1b[0m \x1b[32mexit\x1b[0m
 
-====================================================================================================
-                                    PARÁMETROS OPCIONALES 
-====================================================================================================
-
-||\x1b[90m    -q    \x1b[0m||\x1b[90m       Contiene una consulta query.        \x1b[0m||\x1b[90m -q {name:"test"} \x1b[0m
-||\x1b[90m    ini   \x1b[0m||\x1b[90m       Índice del primer resultado.        \x1b[0m||\x1b[90m -ini 10          \x1b[0m
-||\x1b[90m   count  \x1b[0m||\x1b[90m       Número máximo de resultados.        \x1b[0m||\x1b[90m -count 10        \x1b[0m
-||\x1b[90m    -n    \x1b[0m||\x1b[90m       Nombre del usuario.                 \x1b[0m||\x1b[90m -n Alejandro     \x1b[0m
-||\x1b[90m    -s    \x1b[0m||\x1b[90m       Apellido del usuario.               \x1b[0m||\x1b[90m -s Pastor        \x1b[0m
-||\x1b[90m    -e    \x1b[0m||\x1b[90m       Email del usuario.                  \x1b[0m||\x1b[90m -e test@gmail.com\x1b[0m
-||\x1b[90m    -p    \x1b[0m||\x1b[90m       Contraseña del usuario.             \x1b[0m||\x1b[90m -p password      \x1b[0m
-||\x1b[90m    -i    \x1b[0m||\x1b[90m       Nick del usuario.                   \x1b[0m||\x1b[90m -i Nick          \x1b[0m
-||\x1b[90m   --id   \x1b[0m||\x1b[90m       ID única del usuario.               \x1b[0m||\x1b[90m --id 93121232132 \x1b[0m
+Para más información acerca de un comando específico utiliza \x1b[33m<cmd> --help\x1b[0m
+Esto te ayudará a comprender con más detalle valor de cada comando.
 
 `;
 
@@ -111,6 +95,133 @@ Comandos Disponibles :
 
 `;
 
+help = {
+    login : 
+`
+=======================================================================
+                   MENÚ DE AYUDA : COMANDO LOGIN
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Comando de autenticación para un usuario.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-e| : <email>      ->  Correo electrónico asociado a la cuenta de usuario.
+    |-p| : <password>   ->  Contraseña registrada para el usuario.
+
+ NOTA: \x1b[90mLa ejecución del comando no está disponible una vez autenticado.\x1b[0m
+`,
+    add : 
+`
+=======================================================================
+                   MENÚ DE AYUDA : COMANDO ADDUSER
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Registrar a un nuevo usuario en la base de datos.  
+ • \x1b[33mUso\x1b[0m: \x1b[32maddUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m o \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-n| : <name>       ->  Nombre del usuario que se está registrando.
+    |-s| : <surname>    ->  Primer apellido del usuario.
+    |-e| : <email>      ->  Correo electrónico vinculado a la cuenta de usuario.
+    |-p| : <password>   ->  Contraseña deseada para el usuario.
+    |-i| : <nick>       ->  Apodo o alias deseado dentro de la aplicación.
+
+ NOTA: \x1b[90mLa ejecución del comando no está disponible una vez autenticado.\x1b[0m
+`,
+    update : 
+`
+=======================================================================
+                 MENÚ DE AYUDA : COMANDO UPDATEUSER
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Actualiza algún valor o campo en los datos del usuario logueado.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m o \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-n| : <name>       ->  Nombre del usuario.
+    |-s| : <surname>    ->  Primer apellido del usuario.
+    |-e| : <email>      ->  Correo electrónico vinculado a la cuenta de usuario.
+    |-p| : <password>   ->  Contraseña deseada para el usuario.
+    |-i| : <nick>       ->  Apodo o alias deseado dentro de la aplicación.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - La modificación de algún campo del usuario puede llevarse a cabo de carácter individual.
+   - Por lo cual no es necesario colocar todas las variables en caso de únicamente querer actualizar un campo.
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    listUsers : 
+`
+=======================================================================
+                   MENÚ DE AYUDA : COMANDO LISTUSERS
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Listar a los usuarios registrados en la aplicación.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -i \x1b[32m<ini>\x1b[0m -c \x1b[32m<count>\x1b[0m -s \x1b[32m<sort>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-q| : <query>      ->  Especifica una consulta.
+    |-i| : <ini>        ->  Índice del primer resultado mostrado.
+    |-c| : <count>      ->  Índica el número máximo de resultados mostrados.
+    |-s| : <sort>       ->  Ordenar los resultados por +|- campos.
+ 
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
+ • \x1b[33mEjemplo de uso\x1b[0m:
+   - listUsers -q {name:"alex"} -c 1
+ 
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    follows : 
+`
+=======================================================================
+                  MENÚ DE AYUDA : FOLLOW / UNFOLLOW
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Empezar / Dejar de seguir a un usuario registrado en la base de datos.  
+ • \x1b[33mUso\x1b[0m: 
+   - \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m.
+   - \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |--id| : <userID>   ->  Especifica la ID del usuario que deseas empezar / dejar de seguir.
+  
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    listFollowing : 
+`
+=======================================================================
+                MENÚ DE AYUDA : COMANDO LISTFOLLOWING
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Muestra una lista de todos los usuarios a los que sigues (follow).  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlistFollowing\x1b[0m -q \x1b[32m<query>\x1b[0m -i \x1b[32m<ini>\x1b[0m -c \x1b[32m<count>\x1b[0m -s \x1b[32m<sort>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-q| : <query>      ->  Especifica una consulta.
+    |-i| : <ini>        ->  Índice del primer resultado mostrado.
+    |-c| : <count>      ->  Índica el número máximo de resultados mostrados.
+    |-s| : <sort>       ->  Ordenar los resultados por +|- campos.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
+ • \x1b[33mEjemplo de uso\x1b[0m:
+   - listFollowing -q {name:"alex"} -c 10
+  
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    listFollowers : 
+`
+=======================================================================
+                MENÚ DE AYUDA : COMANDO LISTFOLLOWERS
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Muestra una lista de todos los usuarios que te siguen (follow).  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlistFollowers\x1b[0m -q \x1b[32m<query>\x1b[0m -i \x1b[32m<ini>\x1b[0m -c \x1b[32m<count>\x1b[0m -s \x1b[32m<sort>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-q| : <query>      ->  Especifica una consulta.
+    |-i| : <ini>        ->  Índice del primer resultado mostrado.
+    |-c| : <count>      ->  Índica el número máximo de resultados mostrados.
+    |-s| : <sort>       ->  Ordenar los resultados por +|- campos.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
+ • \x1b[33mEjemplo de uso\x1b[0m:
+   - listFollowers -q {name:"alex"} -c 10
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+
+}
+
 module.exports = {
-    login, modify, token, menu, login_menu, prompt, not_param, follow
+    login, modify, token, menu, login_menu, prompt, help, follows
 }

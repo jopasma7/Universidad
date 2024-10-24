@@ -25,50 +25,56 @@ function menu(args, cb) {
         /* Lista de comandos que podremos ejecutar cuando el usuario esté logueado y tenga un Token */
         if(token !== undefined){
             switch (args._[0]) { 
-                case "updateUser":
-                    /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */  
+                case "updateUser": /* Comando: updateUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */ 
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.update); cb(); break;  } 
+
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
-                    let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
-    
-                    /* Llama a la función updateUser() del Model */
-                    model.updateUser(token, u, (err, u) =>{
+                    let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i }; 
+                   
+                    model.updateUser(token, u, (err, u) =>{ /* Llama a la función updateUser() del Model */
                         if(u != undefined) {
                             if(user.nick != u.nick) rl.setPrompt(u.nick + " : "); // Cambiamos el Prompt.
                             user = u; // Reajustamos el usuario.
                         }                     
-                        cb();
-                        
+                        cb();                  
                     })
                 break;
-                case "follow":
-                    /* Comando: follow -id <userID> */
+                case "follow": /* Comando: follow -id <userID> */
+                     /* Mostramos la ayuda del comando con el parámetro --help */
+                     if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
+
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    /* Comprobar también si el ID introducido es ENTERO */
-                    if(args.id == undefined){
-                        print(messages.follow.no_userID, (messages.follow.log.err.replace("%nick%",user.nick)), 0);
-                        cb(); break;
-                    }
-                    if(args.id.length !== 24){
-                        print(messages.follow.no_length, (messages.follow.log.err.replace("%nick%",user.nick)), 0);
-                        cb(); break;
-                    }
+                    if(args.id == undefined){  print(messages.follow.no_userID, (messages.follow.log.err.replace("%nick%",user.nick)), 0);  cb(); break;  }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.follow.no_length, (messages.follow.log.err.replace("%nick%",user.nick)), 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
                     model.follow(token, args.id, (err) =>{
                         if(err) console.log(err.stack);
                         cb(); 
                     });
-                    
+                break;
+                case "unfollow": /* Comando: unfollow -id <userID> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
 
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if(args.id == undefined){  print(messages.follows.unfollow_no_userID, (messages.follows.log.err.replace("%nick%",user.nick)), 0);  cb(); break;  }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.follows.unfollow_no_length, (messages.follows.log.err.replace("%nick%",user.nick)), 0); cb(); break;   }
+
+                    /* Tenemos los parámetros correctamente entonces le pasamos el método */
+                    model.unfollow(token, args.id, (err) =>{
+                        if(err) console.log(err.stack);
+                        cb(); 
+                    });
                 break;
                 case "listUsers": 
                     /* Comando: listUsers -q <query> -i <init> -c <count> */
-                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    /* Puede no tener parámetros... */
-                    /* .
-                    * .
-                    * .
-                    */
+                    
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.listUsers); cb(); break;  } 
 
                     // Llama al método del Model para listar a los Usuarios.
                     model.listUsers(token, args, (err, res) => {
@@ -90,6 +96,9 @@ function menu(args, cb) {
             switch (args._[0]) {           
                 case "login": 
                     /* Comando: login -e <email> -p <password> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.login); cb(); break;  }
+
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
                     if(args.e == undefined){
                         print(messages.login.no_email,messages.login.log.no_email_or_pass, 0);
@@ -124,7 +133,11 @@ function menu(args, cb) {
                 
                 
                 case "addUser": 
-                    /* Agregar un usuario a la base de datos */ 
+                    /* Agregar un usuario a la base de datos */
+                    
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
+                    
                     /* Comando: addUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
                     if((args.n == undefined) || !args.n){
