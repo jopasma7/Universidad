@@ -14,6 +14,7 @@ log = {
     new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
     new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <nick>:%nick% y con el contenido: %content%.",
+    new_retweet : "Se ha registrado un nuevo retweet enviado por el usuario con <nick>:%nick_retweet% del tweet con id: %tweetID%, owner: %owner_nick% y contenido: %content%.",
     new_like : "Se ha registrado un nuevo like del usuario: %user_liked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
     new_dislike : "Se ha registrado un nuevo dislike del usuario: %user_disliked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
 }
@@ -23,7 +24,7 @@ cmd = {
     invalid_credentials : ">> El usuario o la contraseña especificados no existen en nuestra base de datos.",
     no_email : ">> Especifica un \x1b[33m-e <email>\x1b[0m. Utiliza \x1b[33mlogin --help\x1b[0m para más información. ",
     no_password : ">> Debes introducir un \x1b[33m-p <password>\x1b[0m. Utiliza \x1b[33mlogin --help\x1b[0m para más información. ",
-    success : ">> Bievenido a Twitter \x1b[1m\x1b[33m%nick%\x1b[0m"
+    success : ">> Bievenido a Twitter \x1b[1m\x1b[33m%nick%\x1b[0m. ¿Qué tal si empezamos a Twittear?"
   },
   addUser : {
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
@@ -68,6 +69,14 @@ cmd = {
   addTweet : {
     no_content : ">> Necesitas especificar un contenido del Tweet. \x1b[33mComando\x1b[0m: \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m",
     success : ">> Has creado un nuevo Tweet.",
+  },
+  addRetweet : {
+    no_id : ">> Necesitas especificar un tweetID. Haz uso de \x1b[33maddRetweet --help\x1b[0m para más información.",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. Haz uso de \x1b[33maddRetweet --help\x1b[0m para más información.",
+    no_exists : ">> El tweet con ID = %tweetID% no existe en la base de datos.",
+    already_retweet : ">> Ya diste retweet previamente a este Tweet.",
+    your_tweet : ">> No puedes dar retweet a tus propios Tweets.",
+    success : ">> Has dado retweet al Tweet publicado por %nick%",
   },
   listTweets : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistTweets --help\x1b[0m para más información.",
@@ -133,14 +142,14 @@ Haz uso de \x1b[33m<cmd> --help\x1b[0m
 login_menu =
 `
 =======================================================================
-                            LOGIN MENÚ  
+                            LOGIN MENÚ 
 =======================================================================
 \x1b[33m1.\x1b[0m \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m
 \x1b[33m2.\x1b[0m \x1b[32maddUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m
 \x1b[33m3.\x1b[0m \x1b[32mexit\x1b[0m
 
-Para más información acerca de un comando específico utiliza \x1b[33m<cmd> --help\x1b[0m
-Esto te ayudará a comprender con más detalle los valores de cada comando.
+Haz uso de los comandos anteriores para iniciar sesión o registrarse.
+Para más información acerca de un comando utiliza \x1b[33m<cmd> --help\x1b[0m
 `;
 
 help = {

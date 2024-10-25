@@ -1,28 +1,15 @@
 
 
 GENERAL :
-- Comprobación de los parámetros, se puede poner doble -n por ejemplo.
 - Revisar las querys (Si son vacías mandar un mensaje en vez de la tabla vacía)
-- Mensaje para el listUsers , followers, following.
-- Error en ListTweets que se cierra la conexión con query mala.
-
+- Mensaje de búsqueda realizada para el listUsers , followers, following
+- Console log en AddTweet
 
 
 ADDRETWEET : El usuario autenticado reteetea otro tweet El callback recibe el retweet creado.
 - (token,tweetId, cb)
 - todo...
 
-LISTTWEETS : El usuario autenticado lista todos los tweets, con diversas opciones. El callback recibe un vector con los tweets.
-- (token,opts,cb)
-- todo...
-
-LIKE : El usuario indica que le gusta un tweet
-- (token,tweetId,cb)
-- todo...
-
-DISLIKE : El usuario indica que no le gusta un tweet
-- e(token,tweetId,cb)
-- todo...
 
 COSAS QUE TIENE :
 A NIVEL PROGRAMACIÓN:
@@ -34,11 +21,13 @@ A NIVEL PROGRAMACIÓN:
 - Querys bien diseñadas y funcionales en los comandos de listar. 
 - Posibilidad de actualizar al usuario por parámetros una a uno de forma individual y no todos a la vez.
 - Cambio en el Prompt a la hora de loguearse o actualizar el nick de usuario.
-- Chequeos intensivos a la hora de actualizar datos (Cancelar si el email o nick ya está en uso por otro usuario).
+- En referencia al update. Chequeos intensivos a la hora de actualizar datos (Cancelar si el email o nick ya está en uso por otro usuario).
 - Almacenamiento de Follow y Unfollow por ID de Mongo Object para facilitar búsquedas.
 - Creación de un campo Owner en la base de datos de Tweets donde están los datos del creador del Tweet para fácil gestión.
 - Like y Dislike alternados. Cuando se da like se quita el dislike (en caso de existir) y de igual modo al contrario.
 - Revisiones en Like y Dislike para no darse a uno mismo o repetir acciones.
+- Autocompletado de los comandos y comandos recomendados.
+- Parches en la comprobación de los parámetros de minimist, poner dos veces lo mismo creaba un array y provocaba errores.
 
 A NIVEL VISUAL:
 - Diseño elegante.

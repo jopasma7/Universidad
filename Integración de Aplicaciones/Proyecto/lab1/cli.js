@@ -2,9 +2,21 @@ const readline = require("readline");
 const minimist = require("minimist"); 
 const model = require("./model_mongo"); 
 const messages = require("./messages"); 
+
+// Lista de comandos para autocompletar
+const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'listFollowing', 'listFollowers', 
+    'follow', 'unfollow', 'addTweet', 'addRetweet', 'listTweets', 'like', 'dislike'];
+
 const rl = readline.createInterface({    
     input: process.stdin,    
-    output: process.stdout 
+    output: process.stdout,
+    completer: (line) => {
+        // Filtrar comandos que comienzan con el texto ingresado
+        const hits = commands.filter((cmd) => cmd.startsWith(line));
+        
+        // Mostrar todas las opciones si no hay coincidencia exacta
+        return [hits.length ? hits : commands, line];
+      }
 }); 
 
 rl.setPrompt(messages.prompt); 
@@ -17,7 +29,7 @@ rl.on("line", line => {
             rl.prompt();    
         }); 
     } else rl.prompt(); 
-}); 
+});
 
 let token, user;
 
@@ -35,7 +47,7 @@ function menu(args, cb) {
                    
                     model.updateUser(token, u, (err, u) =>{ /* Llama a la función updateUser() del Model */
                         if(u != undefined) {
-                            if(user.nick != u.nick) rl.setPrompt(u.nick + " : "); // Cambiamos el Prompt.
+                            if(user.nick != u.nick) rl.setPrompt("\x1b[1m\x1b[33m"+u.nick + "\x1b[0m : "); // Cambiamos el Prompt.
                             user = u; // Reajustamos el usuario.
                         }                     
                         cb();                  
@@ -122,6 +134,20 @@ function menu(args, cb) {
                         cb();
                     })  
                 break;
+                case "addRetweet": /* Comando: addRetweet --id <tweetID> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.addRetweet); cb(); break;  } 
+
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  print(messages.cmd.addRetweet.no_id, 0);  cb(); break;  }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.cmd.addRetweet.no_length, 0); cb(); break;   }
+                    // Llama al método del Model.
+                    model.addRetweet(token, args.id, (err) => {
+                        if(err) console.log(err.stack);
+                        cb();
+                    })  
+                break;
                 case "listTweets": /* Comando: listTweets -q <query> -i <init> -c <count> */
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.listTweets); cb(); break;  } 
@@ -165,7 +191,10 @@ function menu(args, cb) {
                     if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));
                     else console.log(messages.cmd.exit.not_logged);
                     user = undefined; token = undefined;
-                    process.exit(0);   
+                    rl.setPrompt(messages.prompt); 
+                    console.log(messages.login_menu);
+                    cb();
+                    break;  
                 default: /* Muestra el menú principal de ayuda */
                     console.log(messages.menu);
                     cb();
@@ -190,6 +219,7 @@ function menu(args, cb) {
                                 (messages.log.user_join.replace("%nick%", _user.nick)
                                 .replace("%email%", _user.email)), 1);
                             rl.setPrompt("\x1b[1m\x1b[33m"+user.nick + "\x1b[0m : "); 
+                            console.log(messages.menu);
                             cb();
                         }
                     })
@@ -252,3 +282,4 @@ function print(message, color){
         break;
     }
 }
+

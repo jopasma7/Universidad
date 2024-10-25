@@ -239,12 +239,13 @@ function listUsers(token, opts, cb) {
                  let _query = jsonQuery; let _opts = {};
                  if (opts.i) _opts.skip = opts.i;
                  if (opts.c) _opts.limit = opts.c;
-                 if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+                 if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                  users.find(_query, _opts).toArray().then(_results => {
                      let results = _results.map((user) => {            
                          return {              
                              id: user._id.toHexString(), name: user.name,              
-                             surname: user.surname, email: user.email, nick: user.nick            
+                             surname: user.surname, email: user.email, nick: user.nick,  
+                             following: user.following.length,  followers: user.followers.length         
                          };          
                      });          
                  _cb(null, results);        
@@ -297,7 +298,7 @@ function listFollowing(token, opts, cb) {
                 let _query = jsonQuery; let _opts = {};
                 if (opts.i) _opts.skip = opts.i;
                 if (opts.c) _opts.limit = opts.c;
-                if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+                if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                 users.find({ $and: [_query,{ _id: { $in: _user.following } }] }, _opts).toArray().then(usuarios => { 
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
@@ -359,7 +360,7 @@ function listFollowers(token, opts, cb) {
                 let _query = jsonQuery; let _opts = {};
                 if (opts.i) _opts.skip = opts.i;
                 if (opts.c) _opts.limit = opts.c;
-                if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+                if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                 users.find({ $and: [_query,{ _id: { $in: _user.followers } }] }, _opts).toArray().then(usuarios => { 
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
@@ -568,6 +569,85 @@ function addTweet(token, content, cb){
 }
 
 /*======================================================*/
+/*               MENSAJES >> ADDRETWEET                 */
+/*======================================================*/
+/*    Esta función sirve para dar retweet a un tweet    */
+/*                 Requiere un <token>                  */
+/*     Necesita una ID del Tweet para identificarlo     */
+/*          Devuelve un <cb> con el resultado.          */
+function addRetweet(token, tweetId, cb){
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+        _cb = function (err) {      
+            client.close();      
+            cb(err);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users); 
+        let tweets = db.collection(colecciones.tweets);     
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => { 
+            if (!_user) {
+                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+                print(messages.cmd.err.no_token, 0);
+                _cb(null); return; 
+            }
+            /* Revisaremos si el Tweet al que queremos dar Retweet existe en la base de datos */            
+            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
+                if (!tw) {
+                    /* Si no existe el TweetID envía un mensaje de error y devuelve el cb */
+                    print((messages.cmd.addRetweet.no_exists.replace("%tweetID%",tweetId)), 0);
+                    _cb(null); return;  
+                }
+                /* Tenemos que revisar que no se pueda dar retweet la misma persona a su propio tweet */
+                if(tw.owner.id.toString() === _user._id.toHexString()){
+                    print(messages.cmd.addRetweet.your_tweet, 0);
+                    _cb(null);  return;  
+                }
+                /* Como si que está en la base de datos, procederemos a hacer el retweet */
+                /* Pero antes tenemos que revisar si el usuario ya ha dado retweet previamente a ese mensaje */
+                if(tw.retweets.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                    /* Error : Ya hiciste retweet de ese mensaje */
+                    print(messages.cmd.addRetweet.already_retweet, 0);
+                    _cb(null); return;
+                }
+
+                let r = { id : _user._id, nick : _user.nick }
+                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
+                    {
+                        $push: { retweets: r }
+                    }
+                    ).then(result => {  /* Agrega el nuevo usuario al array de retweets*/
+                    
+                        if(result){                                    
+                            /* Ya tenemos nuestro nombre agregado en la lista retweets del Tweet. */
+                            /* Todo correcto : Manda un mensaje de retweet Complete */
+                            printWithLog((messages.cmd.addRetweet.success.replace("%nick%",tw.owner.nick)),
+                            (messages.log.new_retweet.replace("%nick_retweet%",_user.nick).replace("%owner_nick%",tw.owner.nick)
+                            .replace("%content%",tw.content).replace("%tweetID%",tweetId)),1);
+                            _cb(null);
+                        }else _cb(err);
+                }).catch(err => {              
+                    _cb(err)            
+                });
+            }).catch(err => {      
+                _cb(err)    
+            });    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
+/*======================================================*/
 /*                MENSAJES >> LISTTWEETS                */
 /*======================================================*/
 /*         Esta función sirve para listar todos         */
@@ -610,11 +690,11 @@ function listTweets(token, opts, cb) {
             let _query = jsonQuery; let _opts = {};
             if (opts.i) _opts.skip = opts.i;
             if (opts.c) _opts.limit = opts.c;
-            if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+            if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
             tweets.find(_query, _opts).toArray().then(tweet => { 
                 let results = tweet.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                     return {              
-                        id: a._id.toHexString(), owner: a.owner.nick, content: a.content          
+                        id: a._id.toHexString(), owner: a.owner.nick, content: a.content, retweets: a.retweets.length, like: a.like.length, dislike: a.dislike.length         
                     };          
                 });
                 _cb(null, results);
@@ -671,16 +751,18 @@ function like(token, tweetId, cb){
                 }
                 /* Como si que está en la base de datos, procederemos a hacer el like */
                 /* Pero antes tenemos que revisar si el usuario ya ha dado like previamente a ese mensaje */
-                if(tw.like.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                    /* Error : Ya tienes follow con esa persona */
+                if(tw.like.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                    /* Error : Ya tienes like a ese mensaje */
                     print(messages.cmd.like.already_like, 0);
                     _cb(null); return;
                 }
+                let lk = { id : _user._id, nick : _user.nick }
+
                  /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
                 tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
                     {
-                        $push: { like: _user._id },
-                        $pull: { dislike: _user._id }
+                        $push: { like: lk },
+                        $pull: { dislike: { id: { $in: [_user._id] } }  }
                     }
                     ).then(result => {  /* Agrega el nuevo usuario al array de likes*/
                     
@@ -690,8 +772,6 @@ function like(token, tweetId, cb){
                             printWithLog((messages.cmd.like.success.replace("%nick%",tw.owner.nick)),
                             (messages.log.new_like.replace("%user_liked%",_user.nick).replace("%owner_nick%",tw.owner.nick)
                             .replace("%content%",tw.content).replace("%tweetID%",tweetId)),1);
-                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
-                            /* Ahora falta agregar su nombre a nuestra lista de following */
                             _cb(null);
                         }else _cb(err);
                 }).catch(err => {              
@@ -750,16 +830,19 @@ function dislike(token, tweetId, cb){
                 }
                 /* Como si que está en la base de datos, procederemos a hacer el dislike */
                 /* Pero antes tenemos que revisar si el usuario ya ha dado dislike previamente a ese mensaje */
-                if(tw.dislike.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                    /* Error : Ya tienes follow con esa persona */
+                if(tw.dislike.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                    /* Error : Ya tienes dislike a ese mensaje */
                     print(messages.cmd.dislike.already_dislike, 0);
                     _cb(null); return;
                 }
+
+                let lk = {  id : _user._id,  nick : _user.nick }
+
                  /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
                 tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
                     {
-                        $push: { dislike: _user._id },
-                        $pull: { like: _user._id }
+                        $push: { dislike: lk },
+                        $pull: { like: { id: { $in: [_user._id] } }  }
                     }
                     ).then(result => {  /* Agrega el nuevo usuario al array de dislikes*/
                     
@@ -769,8 +852,6 @@ function dislike(token, tweetId, cb){
                             printWithLog((messages.cmd.dislike.success.replace("%nick%",tw.owner.nick)),
                             (messages.log.new_dislike.replace("%user_disliked%",_user.nick).replace("%owner_nick%",tw.owner.nick)
                             .replace("%content%",tw.content).replace("%tweetID%",tweetId)),1);
-                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
-                            /* Ahora falta agregar su nombre a nuestra lista de following */
                             _cb(null);
                         }else _cb(err);
                 }).catch(err => {              
@@ -786,8 +867,6 @@ function dislike(token, tweetId, cb){
         cb(err);  
     }); 
 }
-
-
 
 /* Imprime un mensaje con colores más un Log al final */
 function printWithLog(message, logMessage, color){
@@ -818,6 +897,7 @@ module.exports = {
     listFollowing,
     listFollowers,
     addTweet,
+    addRetweet,
     listTweets,
     like,
     dislike,
