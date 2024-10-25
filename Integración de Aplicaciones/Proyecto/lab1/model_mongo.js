@@ -7,11 +7,12 @@ const messages= require("./messages");
 
 var colecciones = {
     users : "users",
-    messages : "messages"
+    tweets : "tweets"
 }
 
-/*                   Función de Login                   */
-/*           -------------------------------            */
+/*======================================================*/
+/*                  USUARIOS >> LOGIN                   */
+/*======================================================*/
 /*  Esta función sirve para iniciar sesión en Twitter   */
 /*           Requiere un <email> y <password>           */
 /*    Devuelve un <cb> con el resultado. Indicando      */
@@ -59,8 +60,9 @@ function login(email, password, cb) {
 }
 
 
-/*             Función para Añadir Usuario              */
-/*         -----------------------------------          */
+/*======================================================*/
+/*                 USUARIOS >> ADDUSER                  */
+/*======================================================*/
 /*  Esta función sirve para agregar nuevos usuarios a   */
 /*          la base de datos de la aplicación           */
 /*                  Requiere un <user>                  */
@@ -68,7 +70,6 @@ function login(email, password, cb) {
 /*       Si logró o falló la creación del usuario       */
 
 function addUser(user, cb) {  
-
     /* Realizamos una serie de comprobaciones para revisar si el <user> que nos pasaron */
     /* tiene todos los parámetros correctamente establecidos. */
     if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
@@ -125,15 +126,15 @@ function addUser(user, cb) {
     }   
 }
 
-/*           Función para Cambiar Usuarios              */
-/*        -----------------------------------           */
+/*======================================================*/
+/*               USUARIOS >> UPDATEUSER                 */
+/*======================================================*/
 /*   Esta función sirve para cambiar los datos de un    */
 /*       un usuario. Almacenado en la Aplicación        */
 /*                 Requiere un <token>                  */
 /* Requiere especificar el usuario que queremos cambiar */
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        la lista de usuarios que hemos listado        */
-
 
 function updateUser(token, user, cb){
     /* Realizamos una serie de comprobaciones para revisar el <user> que nos pasaron */
@@ -228,8 +229,9 @@ function updateUser(token, user, cb){
 }
 
 
-/*            Función para Listar Usuarios              */
-/*        -----------------------------------           */
+/*======================================================*/
+/*               USUARIOS >> LISTUSERS                  */
+/*======================================================*/
 /* Esta función sirve para listar a todos los usuarios  */
 /*         de la base de datos de la aplicación         */
 /*                 Requiere un <token>                  */
@@ -297,8 +299,9 @@ function listUsers(token, opts, cb) {
     }); 
 }
 
-/*       Función para Listar Usuarios que sigues        */
-/*        -----------------------------------           */
+/*======================================================*/
+/*             USUARIOS >> LISTFOLLOWING                */
+/*======================================================*/
 /* Esta función sirve para listar a todos los usuarios  */
 /*         a los que el usuario sigue (follow)          */
 /*                 Requiere un <token>                  */
@@ -327,16 +330,7 @@ function listFollowing(token, opts, cb) {
             if (!_user) {
                 print(messages.cmd.err.no_token, 0);
                 _cb(null);  
-            }else { 
-                let followingList = _user.following;
-                console.log("user: "+_user.following);
-                console.log("following array: "+followingList);
-                users.find({ following: { $in: followingList } }).toArray().then(users => { // Esto nos da un vector de usuarios.
-                    console.log("Usuarios que sigues: "+users);
-                }).catch(err => {          
-                    _cb(err)        
-                });
-
+            } else { 
                 let jsonQuery = {};
                 if(opts.q){
                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
@@ -345,27 +339,29 @@ function listFollowing(token, opts, cb) {
                      
                     try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
                     catch(err){
-                        print(messages.cmd.listUsers.invalid_format, 0); // Mensaje de inválid format JSON.
+                        print(messages.cmd.listFollowing.invalid_format, 0); // Mensaje de inválid format JSON.
                         _cb(null);
                         return;
                     }          
-                 }                          
-                 let _query = jsonQuery; let _opts = {};
-                 if (opts.i) _opts.skip = opts.i;
-                 if (opts.c) _opts.limit = opts.c;
-                 if (opts.s) _opts.s = [[opts.s.slice(1),
-                 (opts.s.charAt(0) == '+' ? 1 : -1)]];
-                 users.find(_query, _opts).toArray().then(_results => {
-                     let results = _results.map((user) => {            
-                         return {              
-                             id: user._id.toHexString(), name: user.name,              
-                             surname: user.surname, email: user.email, nick: user.nick            
-                         };          
-                     });          
-                 _cb(null, results);        
-                 }).catch(err => {          
-                     _cb(err)        
-                 });                  
+                }                          
+                let _query = jsonQuery; let _opts = {};
+                if (opts.i) _opts.skip = opts.i;
+                if (opts.c) _opts.limit = opts.c;
+                if (opts.s) _opts.s = [[opts.s.slice(1),
+                (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                users.find(
+                    { $and: [_query,{ _id: { $in: _user.following } }] }, _opts
+                ).toArray().then(usuarios => { 
+                    let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
+                        return {              
+                            id: a._id.toHexString(), name: a.name,              
+                            surname: a.surname, email: a.email, nick: a.nick            
+                        };          
+                    });
+                    _cb(null, results);
+                }).catch(err => {          
+                    _cb(err)        
+                });                 
             }    
         }).catch(err => {      
             _cb(err)    
@@ -375,8 +371,81 @@ function listFollowing(token, opts, cb) {
     }); 
 }
 
-/*            Función para seguir Usuarios              */
-/*        -----------------------------------           */
+/*======================================================*/
+/*             USUARIOS >> LISTFOLLOWERS                */
+/*======================================================*/
+/*       Esta función sirve para listar a todos         */
+/*     los usuarios que sigue el usuario (follow)       */
+/*                 Requiere un <token>                  */
+/*    Se pueden especificar <opts> que son opciones.    */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        la lista de usuarios que hemos listado        */
+
+function listFollowers(token, opts, cb) {  
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */  
+        _cb = function (err, res) {      
+            client.close();      
+            cb(err, res);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users);    
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => {      
+            if (!_user) {
+                print(messages.cmd.err.no_token, 0);
+                _cb(null);  
+            } else { 
+                let jsonQuery = {};
+                if(opts.q){
+                   const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+                   .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
+                   .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
+                     
+                    try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+                    catch(err){
+                        print(messages.cmd.listFollowers.invalid_format, 0); // Mensaje de inválid format JSON.
+                        _cb(null);
+                        return;
+                    }          
+                }                          
+                let _query = jsonQuery; let _opts = {};
+                if (opts.i) _opts.skip = opts.i;
+                if (opts.c) _opts.limit = opts.c;
+                if (opts.s) _opts.s = [[opts.s.slice(1),
+                (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                users.find(
+                    { $and: [_query,{ _id: { $in: _user.followers } }] }, _opts
+                ).toArray().then(usuarios => { 
+                    let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
+                        return {              
+                            id: a._id.toHexString(), name: a.name,              
+                            surname: a.surname, email: a.email, nick: a.nick            
+                        };          
+                    });
+                    _cb(null, results);
+                }).catch(err => {          
+                    _cb(err)        
+                });                 
+            }    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
+/*======================================================*/
+/*                 USUARIOS >> FOLLOW                   */
+/*======================================================*/
 /*     Esta función sirve para seguir a otro usuario    */
 /*                 Requiere un <token>                  */
 /*      Necesita una ID del usuario para seguirle       */
@@ -460,8 +529,10 @@ function follow(token, userId, cb){
     }); 
 }
 
-/*        Función para dejar de seguir Usuarios         */
-/*        -----------------------------------           */
+
+/*======================================================*/
+/*               USUARIOS >> UNFOLLOW                   */
+/*======================================================*/
 /* La función sirve para dejar de seguir a otro usuario */
 /*                 Requiere un <token>                  */
 /*  Necesita una ID del usuario para dejar de seguirle  */
@@ -544,6 +615,136 @@ function unfollow(token, userId, cb){
     }); 
 }
 
+/*======================================================*/
+/*               MENSAJES >> ADDTWEET                   */
+/*======================================================*/
+/*          Agregar un nuevo Mensaje de Tweet           */
+/*                Requiere un <token>                   */
+/*    Contiene el contendo del mensaje en <content>     */
+/*          Devuelve un <cb> con el resultado.          */
+
+function addTweet(token, content, cb){
+    MongoClient.connect(url).then(client => {  
+        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+        _cb = function (err, res) {      
+            client.close();      
+            cb(err, res);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let tweets = db.collection(colecciones.tweets); 
+        let users = db.collection(colecciones.users);   
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => {      
+            if (!_user) {
+                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+                print(messages.cmd.err.no_token, 0);
+                _cb(null);  
+            }else {        
+                let tweet = {
+                    owner : _user._id,
+                    content : content,
+                    retweets : [],
+                    like : [],
+                    dislike : []
+                } 
+                /* Ejecuta insertOne para crear e insertar el tweet en la base de datos */        
+                tweets.insertOne(tweet).then(result => {              
+                    _cb(null, { id: result.insertedId.toHexString(), owner: _user._id, content: content });            
+                }).catch(err => {              
+                    _cb(err)            
+                });
+            }    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    });
+}
+
+/*======================================================*/
+/*                MENSAJES >> LISTTWEETS                */
+/*======================================================*/
+/*         Esta función sirve para listar todos         */
+/*        los tweets que hay en la base de datos        */
+/*                 Requiere un <token>                  */
+/*    Se pueden especificar <opts> que son opciones.    */
+/*    Devuelve un <cb> con el resultado. Que indica     */
+/*        la lista de usuarios que hemos listado        */
+
+function listTweets(token, opts, cb) {  
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */  
+        _cb = function (err, res) {      
+            client.close();      
+            cb(err, res);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users);  
+        let tweets = db.collection(colecciones.tweets);   
+
+        /* Búsqueda de todos los usuarios para agregarlos a un array. */
+        users.find({}).toArray().then(rs => {
+            let re = rs.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
+                return {              
+                    id : a._id.toHexString(), owner: a.nick          
+                };          
+            });
+            const mapa = new Map(re.map(z => [z.id, z]));
+            /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+            /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
+            users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
+                if (!_user) {
+                    print(messages.cmd.err.no_token, 0);
+                    _cb(null);  
+                }});
+                let jsonQuery = {};
+                    if(opts.q){
+                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+                    .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
+                    .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
+                        
+                        try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+                        catch(err){
+                            print(messages.cmd.listTweets.invalid_format, 0); // Mensaje de inválid format JSON.
+                            _cb(null);
+                            return;
+                        }          
+                    }                          
+                    let _query = jsonQuery; let _opts = {};
+                    if (opts.i) _opts.skip = opts.i;
+                    if (opts.c) _opts.limit = opts.c;
+                    if (opts.s) _opts.s = [[opts.s.slice(1),
+                    (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                    tweets.find(_query, _opts).toArray().then(tweet => { 
+                        let results = tweet.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
+                            return {              
+                                id: a._id.toHexString(), owner: mapa.get(a.owner.toHexString()).owner, content: a.content.replace(/'/g, '')          
+                            };          
+                        });
+                        _cb(null, results);
+                    }).catch(err => {          
+                        _cb(err)        
+                    });
+
+            }).catch(err => {          
+                _cb(err)        
+            });
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
+
 /* Imprime un mensaje con colores más un Log al final */
 function printWithLog(message, logMessage, color){
     print(message, color);
@@ -571,4 +772,7 @@ module.exports = {
     follow,
     unfollow,
     listFollowing,
+    listFollowers,
+    addTweet,
+    listTweets,
 }

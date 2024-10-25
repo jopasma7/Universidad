@@ -13,6 +13,7 @@ log = {
     new_unfollow : "Se ha eliminado el follow del usuario con <nick>:%user_nick% para el usuario con <nick>:%target_nick%.",
     new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
+    new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <nick>:%nick% y con el contenido: %content%.",
 }
 
 cmd = {
@@ -42,6 +43,12 @@ cmd = {
   listUsers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistUsers --help\x1b[0m para más información.",
   },
+  listFollowing : {
+    invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowing --help\x1b[0m para más información.",
+  },
+  listFollowers : {
+    invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowers --help\x1b[0m para más información.",
+  },
   follow : {
     no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
@@ -52,10 +59,16 @@ cmd = {
   unfollow : {
     no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
-    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
     not_follow : ">> Todavía no sigues a ese usuario. Empieza a seguirle con el \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     success : ">> Dejaste de seguir al usuario con <nick> : %nick%",
+  },
+  addTweet : {
+    no_content : ">> Necesitas especificar un contenido del Tweet. \x1b[33mComando\x1b[0m: \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m",
+    success : ">> Has creado un nuevo Tweet.",
+  },
+  listTweets : {
+    invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistTweets --help\x1b[0m para más información.",
   },
   err : {
     no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
@@ -170,7 +183,7 @@ help = {
  • \x1b[33mEspecificaciones\x1b[0m: 
    - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
  • \x1b[33mEjemplo de uso\x1b[0m:
-   - listUsers -q {name:"alex"} -c 1
+   - listUsers -q '{ name : "alex" }' -c 1
  
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,
@@ -204,7 +217,7 @@ help = {
  • \x1b[33mEspecificaciones\x1b[0m: 
    - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
  • \x1b[33mEjemplo de uso\x1b[0m:
-   - listFollowing -q {name:"alex"} -c 10
+   - listFollowing -q '{ name : "alex" }' -c 10
   
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,
@@ -224,7 +237,86 @@ help = {
  • \x1b[33mEspecificaciones\x1b[0m: 
    - El uso del comando no va ligado a sus variables. Se puede ejecutar con o sin ellas.
  • \x1b[33mEjemplo de uso\x1b[0m:
-   - listFollowers -q {name:"alex"} -c 10
+   - listFollowers -q '{ name : "alex" }' -c 10
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    addTweet : 
+`
+=======================================================================
+                 MENÚ DE AYUDA : COMANDO ADDTWEET
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Añade un nuevo mensaje de Tweet a la base de datos.  
+ • \x1b[33mUso\x1b[0m: \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-c| : <content>    ->  Cuerpo o contenido del mensaje.
+
+ • \x1b[33mRequisitos\x1b[0m: 
+   - Se deben insertar comillas simples en el contenido del mensaje.
+ • \x1b[33mEjemplo de uso\x1b[0m:
+   - addTweet -c 'Esto es una prueba de Tweet'
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    addRetweet : 
+`
+=======================================================================
+                 MENÚ DE AYUDA : COMANDO ADDRETWEET
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Añade un nuevo Retweet de algún mensaje de Tweet.  
+ • \x1b[33mUso\x1b[0m: \x1b[32maddRetweet\x1b[0m --id \x1b[32m<tweetID>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |--id| : <tweetID>    ->  ID del Tweet que se quiere retweetear.
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    listTweets : 
+`
+=======================================================================
+                 MENÚ DE AYUDA : COMANDO LISTTWEETS
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Lista todos los mensajes de Tweet y Retweet.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlistTweets\x1b[0m -q \x1b[32m<query>\x1b[0m -i \x1b[32m<ini>\x1b[0m -c \x1b[32m<count>\x1b[0m -s \x1b[32m<sort>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |-q| : <query>      ->  Especifica una consulta.
+    |-i| : <ini>        ->  Índice del primer resultado mostrado.
+    |-c| : <count>      ->  Índica el número máximo de resultados mostrados.
+    |-s| : <sort>       ->  Ordenar los resultados por +|- campos.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - Se mostrará una lista de los Tweets y los Retweets juntos.
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    like : 
+`
+=======================================================================
+                      MENÚ DE AYUDA : LIKE
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Da "Me gusta" a algún tweet publicado.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |--id| : <tweetID>    ->  ID del Tweet al que se quiere dar like.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - Solamente se podrá dar Like una vez al mismo Tweet.
+   - En caso de haber dado Like a algún Tweet, no se podrá dar dislike posteriormente.
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    like : 
+`
+=======================================================================
+                      MENÚ DE AYUDA : DISLIKE
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Da "No me gusta" a algún tweet publicado.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |--id| : <tweetID>    ->  ID del Tweet al que se quiere dar dislike.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - Solamente se podrá dar Dislike una vez al mismo Tweet.
+   - En caso de haber dado Dislike a algún Tweet, no se podrá dar Like posteriormente.
 
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,

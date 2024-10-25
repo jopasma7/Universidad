@@ -86,12 +86,51 @@ function menu(args, cb) {
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.listFollowing); cb(); break;  } 
 
-                    // Llama al método del Model para listar a los Usuarios.
+                    // Llama al método del Model para listar a los Followings.
                     model.listFollowing(token, args, (err, res) => {
                         if(err) console.log(err);
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })
+                break;
+                case "listFollowers": /* Comando: listFollowers -q <query> -i <init> -c <count> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.listFollowers); cb(); break;  } 
+
+                    // Llama al método del Model para listar a los Followers.
+                    model.listFollowers(token, args, (err, res) => {
+                        if(err) console.log(err);
+                        else if(res == undefined) cb();
+                        else { console.table(res); cb(); }
+                    })  
+                break;
+                case "addTweet": /* Comando: addTweet -c <content> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.addTweet); cb(); break;  } 
+
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if((args.c == undefined) || !args.c){ print(messages.cmd.addTweet.no_content, 0); cb(); break; }
+
+                    // Llama al método del Model para añadir el Tweet.
+                    model.addTweet(token, args.c, (err, res) => {
+                        if(err) console.log(err);
+                        else {
+                            printWithLog(messages.cmd.addTweet.success, (messages.log.new_tweet
+                                .replace("%content%", res.content).replace("%nick%", user.nick)),1);
+                        }
+                        cb();
+                    })  
+                break;
+                case "listTweets": /* Comando: listTweets -q <query> -i <init> -c <count> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.listTweets); cb(); break;  } 
+
+                    // Llama al método del Model para listar los Tweets.
+                    model.listTweets(token, args, (err, res) => {
+                        if(err) console.log(err);
+                        else if(res == undefined) cb();
+                        else { console.table(res); cb(); }
+                    })  
                 break;
                 case "exit":
                     if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));

@@ -3,21 +3,10 @@
 GENERAL :
 - Comprobación de los parámetros, se puede poner doble -n por ejemplo.
 - Revisar las querys (Si son vacías mandar un mensaje en vez de la tabla vacía)
+- Mensaje para el listUsers , followers, following.
+- Error en ListTweets que se cierra la conexión con query mala.
 
 
-
-
-LISTFOLLOWING : Listar a los usuarios que sigues... El callback recibe un vector de usuarios.
-- (token,opts, cb)
-- todo...
-
-LISTFOLLOWERS : Lista los usuarios que siguen al usuario  por token, con diversas opciones. El callback recibe un vector de usuarios.
-- (token,opts, cb)
-- todo...
-
-ADDTWEET : Añade un nuevo tweet. El callback recibe el tweet creado.
-- (token,content, cb)
-- todo...
 
 ADDRETWEET : El usuario autenticado reteetea otro tweet El callback recibe el retweet creado.
 - (token,tweetId, cb)
