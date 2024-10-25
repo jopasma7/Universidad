@@ -23,10 +23,8 @@ function login(email, password, cb) {
         /* Crear un nuevo callback llamado _cb que hace lo mismo */
         /* que el cb normal pero también cierra la conexión */           
         _cb = function (err, res, res2) {      
-            client.close();      
-            cb(err, res, res2);    
-        }  
-
+            client.close(); cb(err, res, res2);      
+        }
         /* Crea la conexión a la base de datos */
         let db = client.db(database);    
         let col = db.collection(colecciones.users);    
@@ -72,58 +70,50 @@ function login(email, password, cb) {
 function addUser(user, cb) {  
     /* Realizamos una serie de comprobaciones para revisar si el <user> que nos pasaron */
     /* tiene todos los parámetros correctamente establecidos. */
-    if((user.name == undefined || !user.name) || (user.surname == undefined || !user.surname) || 
-    (user.email == undefined || !user.email) || (user.nick == undefined || !user.nick) || 
-    (user.password == undefined || !user.password)){
+    if(!user.name || !user.surname || !user.email || !user.nick || !user.password){
         print(messages.cmd.addUser.no_param, 0);
-        cb();
-    }else{
-        MongoClient.connect(url).then((client) => {      
-        
-            /* Crear un nuevo callback llamado _cb que hace lo mismo */
-            /* que el cb normal pero también cierra la conexión */       
-            _cb = function (err, res) {        
-                client.close();        
-                cb(err, res);      
-            }
+        cb(); return;
+    }
     
-             /* Crea la conexión a la base de datos */
-            let db = client.db(database);      
-            let users = db.collection(colecciones.users);   
-            
-            /* Revisamos con FindOne si existe e1 usuario con el <email> y <password> en la base de datos */
-            /* Para revisar si el usuario insertado ya existe en la Database */
-            /* En caso de no existir creamos uno nuevo y si existe devolver error */
-            users.findOne({$or:[{ email: user.email },{ nick: user.nick }] })
-                .then((_user) => { 
-                    /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
-                    /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
-                    if(_user){ 
-                        if (_user.email == user.email) print(messages.cmd.addUser.email_exists, 0);
-                        else if (_user.nick == user.nick) print(messages.cmd.addUser.nick_exists, 0);
-                        _cb(null); 
-                    }       
-                    /* Si no existe, hay que crear el usuario y devolverlo por el callback */
-                    else {            
-                        user.following = []; 
-                        user.followers = []; 
-                        /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
-                        users.insertOne(user).then(result => {              
-                            _cb(null, {                
-                                id: result.insertedId.toHexString(), name: user.name,                 
-                                surname: user.surname, email: user.email, nick: user.nick              
-                            });            
-                        }).catch(err => {              
-                            _cb(err)            
-                        });          
-                    }        
-                }).catch(err => {          
-                    _cb(err)        
-                });      
-        }).catch(err => {          
-            _cb(err)        
-        });
-    }   
+    MongoClient.connect(url).then((client) => {           
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */       
+        _cb = function (err, res) {        
+            client.close(); cb(err, res);        
+        }
+         /* Crea la conexión a la base de datos */
+        let db = client.db(database);      
+        let users = db.collection(colecciones.users);   
+        
+        /* Revisamos con FindOne si existe e1 usuario con el <email> y <password> en la base de datos */
+        /* Para revisar si el usuario insertado ya existe en la Database */
+        /* En caso de no existir creamos uno nuevo y si existe devolver error */
+        users.findOne({$or:[{ email: user.email },{ nick: user.nick }] }).then((_user) => { 
+                /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
+                /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
+                if(_user){ 
+                    if (_user.email == user.email) print(messages.cmd.addUser.email_exists, 0);
+                    else if (_user.nick == user.nick) print(messages.cmd.addUser.nick_exists, 0);
+                    _cb(null); return;
+                }       
+                /* Si no existe, hay que crear el usuario y devolverlo por el callback */
+                user.following = []; 
+                user.followers = []; 
+                /* Ejecuta insertOne para crear e insertar el usuario en la base de datos */        
+                users.insertOne(user).then(result => {              
+                    _cb(null, {                
+                        id: result.insertedId.toHexString(), name: user.name,                 
+                        surname: user.surname, email: user.email, nick: user.nick              
+                    });            
+                }).catch(err => {              
+                    _cb(err)            
+                });       
+            }).catch(err => {          
+                _cb(err)        
+            });      
+    }).catch(err => {          
+        _cb(err)        
+    });
 }
 
 /*======================================================*/
@@ -141,91 +131,72 @@ function updateUser(token, user, cb){
     /* Si tiene algún parámetro... procederemos a realizar el cambio. */
     let booleanUser = {name : false, surname : false, email : false, password : false, nick : false }
    
-    if(user.name != undefined) booleanUser.name = true;
-    if(user.surname != undefined) booleanUser.surname = true;
-    if(user.email != undefined) booleanUser.email = true;
-    if(user.password != undefined) booleanUser.password = true;
-    if(user.nick != undefined) booleanUser.nick = true;
+    if(user.name && typeof user.name === 'string' && user.name.trim() !== '') booleanUser.name = true;
+    if(user.surname && typeof user.surname === 'string' && user.surname.trim() !== '') booleanUser.surname = true;
+    if(user.email && typeof user.email === 'string' && user.email.trim() !== '') booleanUser.email = true;
+    if(user.password && typeof user.password === 'string' && user.password.trim() !== '') booleanUser.password = true;
+    if(user.nick && typeof user.nick === 'string' && user.nick.trim() !== '') booleanUser.nick = true;
     
-    if(user.name || user.surname || user.email || user.password || user.nick){
-            MongoClient.connect(url).then((client) => {      
-        
-                /* Crear un nuevo callback llamado _cb que hace lo mismo */
-                /* que el cb normal pero también cierra la conexión */       
-                _cb = function (err, res) {        
-                    client.close();        
-                    cb(err, res);      
-                }
-        
-                 /* Crea la conexión a la base de datos */
-                let db = client.db(database);      
-                let users = db.collection(colecciones.users);   
-                
-                // Si nos pidieron actualizar el parámetro Email.
-                // Hay que realizar una búsqueda en la base de datos por si coincide con algún usuario ya registrado.
-                if(booleanUser.email){
-                    users.findOne({ email: user.email }).then((j) => {                        
-                        if(j){ print(messages.cmd.updateUser.email_exists,0); _cb(null);
-                            return;
-                        }              
-                    });    
-                }
-
-                // Si nos pidieron actualizar el parámetro nick.
-                // Hay que realizar una búsqueda en la base de datos por si coincide con algún usuario ya registrado.
-                if(booleanUser.nick){
-                    users.findOne({ nick: user.nick }).then((j) => {                        
-                        if(j){ print(messages.cmd.updateUser.nick_exists,0); _cb(null);
-                            return;
-                        }              
-                    });    
-                }
-                
-                /* Recogemos con FindOne al usuario con el <token>:<token> en la base de datos */
-                /* Lo usaremos para hacer los cambios */
-                const consulta = {  _id: new mongodb.ObjectId(token)  };
-                users.findOne(consulta)
-                    .then((_user) => { 
-                        /* Si existe, Actualizaremos los datos que nos pasaron al usuario */
-                        if(_user){                             
-                            if(booleanUser.name) _user.name = user.name;
-                            if(booleanUser.surname) _user.surname = user.surname;
-                            if(booleanUser.email) _user.email = user.email;
-                            if(booleanUser.password) _user.password = user.password;
-                            if(booleanUser.nick) _user.nick = user.nick;
-
-                            const update = { $set: { name: _user.name, surname: _user.surname, email: _user.email, password: _user.password, nick: _user.nick } };
-                            users.updateOne(consulta, update).then(result => { 
-                                if(result){
-                                    printWithLog(messages.cmd.updateUser.success, (messages.log.new_update
-                                        .replace("%name%",_user.name).replace("%surname%",_user.surname)
-                                        .replace("%email%",_user.email).replace("%nick%",_user.nick).replace("%password%",_user.password)), 1);            
-                                    _cb(null, _user);
-                                }else{
-                                    _cb(err) 
-                                }                                           
-                            }).catch(err => {              
-                                _cb(err)            
-                            });
-                            
-                        }       
-                        /* Si no existe, es que el token es inválido y devolveremos error */
-                        else {
-                            print(messages.cmd.err.no_token, 0);
-                            _cb() 
-                        }
-
-                    }).catch(err => {          
-                        _cb(err)        
-                    });      
-            }).catch(err => {          
-                _cb(err)        
-            });
-    }else{
-        /* Si no tiene ningún parámetro devolveremos error. */
+    /* Si no se ha insertado ningún parámetro devolvemos error */
+    if(!booleanUser.name && !booleanUser.surname && !booleanUser.email && !booleanUser.password && !booleanUser.nick){
         print(messages.cmd.updateUser.no_param, 0);
-        cb(null);
+        cb(null); return;
     }
+    MongoClient.connect(url).then((client) => {        
+        /* Crear un nuevo callback llamado _cb que hace lo mismo */
+        /* que el cb normal pero también cierra la conexión */       
+        _cb = function (err, res) {        
+            client.close(); cb(err, res);          
+        }
+         /* Crea la conexión a la base de datos */
+        let db = client.db(database);      
+        let users = db.collection(colecciones.users);   
+        
+        // Si nos pidieron actualizar el parámetro Email.
+        if(booleanUser.email){ /* Hay que realizar una búsqueda en la base de datos por si coincide con algún email de usuario ya registrado. */
+            users.findOne({ email: user.email }).then((j) => {                        
+                if(j){ print(messages.cmd.updateUser.email_exists,0); _cb(null); return; }               
+            });    
+        }
+
+        // Si nos pidieron actualizar el parámetro nick.
+        if(booleanUser.nick){ /* Hay que realizar una búsqueda en la base de datos por si coincide con algún nick de usuario ya registrado. */
+            users.findOne({ nick: user.nick }).then((j) => {                        
+                if(j){ print(messages.cmd.updateUser.nick_exists,0); _cb(null); return; }              
+            });    
+        }
+        
+        /* Recogemos con FindOne al usuario con el <token>:<token> en la base de datos */
+        /* Lo usaremos para hacer los cambios */
+        const consulta = {  _id: new mongodb.ObjectId(token)  };
+        users.findOne(consulta).then((_user) => { 
+            /* Si no existe devolvemos error y si existe actualizamos el usuario. */
+            if(!_user){ print(messages.cmd.err.no_token, 0); _cb(); return; }                         
+            if(booleanUser.name) _user.name = user.name;
+            if(booleanUser.surname) _user.surname = user.surname;
+            if(booleanUser.email) _user.email = user.email;
+            if(booleanUser.password) _user.password = user.password;
+            if(booleanUser.nick) _user.nick = user.nick;
+
+            const update = { $set: { name: _user.name, surname: _user.surname, email: _user.email, password: _user.password, nick: _user.nick } };
+            users.updateOne(consulta, update).then(result => { 
+                if(result){
+                    printWithLog(messages.cmd.updateUser.success, (messages.log.new_update
+                        .replace("%name%",_user.name).replace("%surname%",_user.surname)
+                        .replace("%email%",_user.email).replace("%nick%",_user.nick).replace("%password%",_user.password)), 1);            
+                    _cb(null, _user);
+                }else{
+                    _cb(err) 
+                }                                           
+            }).catch(err => {              
+                _cb(err)            
+            });                                            
+        }).catch(err => {          
+            _cb(err)        
+        });      
+    }).catch(err => {          
+        _cb(err)        
+    });
 }
 
 
@@ -241,44 +212,34 @@ function updateUser(token, user, cb){
 
 function listUsers(token, opts, cb) {  
     MongoClient.connect(url).then(client => {  
-
         /* Crear un nuevo callback llamado _cb que hace lo mismo */
         /* que el cb normal pero también cierra la conexión */  
         _cb = function (err, res) {      
-            client.close();      
-            cb(err, res);    
+            client.close(); cb(err, res);     
         }   
-
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
         let users = db.collection(colecciones.users);    
 
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-            if (!_user) {
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            }else { 
-                 let jsonQuery = {};
-                 if(opts.q){
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; } /* Mensaje de error */
+                 
+            let jsonQuery = {}; /* Variable para almacenar la query */
+                if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
                     const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
                     .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
                     .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
                      
                     try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
-                     catch(err){
-                        print(messages.cmd.listUsers.invalid_format, 0); // Mensaje de inválid format JSON.
-                        _cb(null);
-                        return;
-                     }          
-                 }                          
+                    catch(err){ print(messages.cmd.listUsers.invalid_format, 0); _cb(null); return; } // Mensaje de inválid format JSON.              
+                 }  
+
                  let _query = jsonQuery; let _opts = {};
                  if (opts.i) _opts.skip = opts.i;
                  if (opts.c) _opts.limit = opts.c;
-                 if (opts.s) _opts.s = [[opts.s.slice(1),
-                 (opts.s.charAt(0) == '+' ? 1 : -1)]];
+                 if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                  users.find(_query, _opts).toArray().then(_results => {
                      let results = _results.map((user) => {            
                          return {              
@@ -289,8 +250,7 @@ function listUsers(token, opts, cb) {
                  _cb(null, results);        
                  }).catch(err => {          
                      _cb(err)        
-                 });                  
-            }    
+                 });    
         }).catch(err => {      
             _cb(err)    
         });  
@@ -311,47 +271,34 @@ function listUsers(token, opts, cb) {
 
 function listFollowing(token, opts, cb) {  
     MongoClient.connect(url).then(client => {  
-
         /* Crear un nuevo callback llamado _cb que hace lo mismo */
         /* que el cb normal pero también cierra la conexión */  
         _cb = function (err, res) {      
-            client.close();      
-            cb(err, res);    
+            client.close(); cb(err, res);                  
         }   
-
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
         let users = db.collection(colecciones.users);    
 
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-            if (!_user) {
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            } else { 
-                let jsonQuery = {};
-                if(opts.q){
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {     
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; } /* Mensaje de error */ 
+                
+            let jsonQuery = {}; /* Variable para almacenar la query */
+                if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
                    .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
                    .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
                      
                     try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
-                    catch(err){
-                        print(messages.cmd.listFollowing.invalid_format, 0); // Mensaje de inválid format JSON.
-                        _cb(null);
-                        return;
-                    }          
+                    catch(err){ print(messages.cmd.listFollowing.invalid_format, 0); _cb(null); return; }  // Mensaje de inválid format JSON.                             
                 }                          
                 let _query = jsonQuery; let _opts = {};
                 if (opts.i) _opts.skip = opts.i;
                 if (opts.c) _opts.limit = opts.c;
-                if (opts.s) _opts.s = [[opts.s.slice(1),
-                (opts.s.charAt(0) == '+' ? 1 : -1)]];
-                users.find(
-                    { $and: [_query,{ _id: { $in: _user.following } }] }, _opts
-                ).toArray().then(usuarios => { 
+                if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+                users.find({ $and: [_query,{ _id: { $in: _user.following } }] }, _opts).toArray().then(usuarios => { 
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
                             id: a._id.toHexString(), name: a.name,              
@@ -361,8 +308,7 @@ function listFollowing(token, opts, cb) {
                     _cb(null, results);
                 }).catch(err => {          
                     _cb(err)        
-                });                 
-            }    
+                });    
         }).catch(err => {      
             _cb(err)    
         });  
@@ -397,33 +343,24 @@ function listFollowers(token, opts, cb) {
 
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-            if (!_user) {
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            } else { 
-                let jsonQuery = {};
-                if(opts.q){
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {  
+            /* Si no existe devuelve un mensaje de error */    
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null);  return; }
+            
+            let jsonQuery = {}; //Variable para almacenar la query.
+                if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
                    .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
                    .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
                      
                     try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
-                    catch(err){
-                        print(messages.cmd.listFollowers.invalid_format, 0); // Mensaje de inválid format JSON.
-                        _cb(null);
-                        return;
-                    }          
+                    catch(err){ print(messages.cmd.listFollowers.invalid_format, 0); _cb(null); return; } // Mensaje de inválid format JSON.              
                 }                          
                 let _query = jsonQuery; let _opts = {};
                 if (opts.i) _opts.skip = opts.i;
                 if (opts.c) _opts.limit = opts.c;
-                if (opts.s) _opts.s = [[opts.s.slice(1),
-                (opts.s.charAt(0) == '+' ? 1 : -1)]];
-                users.find(
-                    { $and: [_query,{ _id: { $in: _user.followers } }] }, _opts
-                ).toArray().then(usuarios => { 
+                if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+                users.find({ $and: [_query,{ _id: { $in: _user.followers } }] }, _opts).toArray().then(usuarios => { 
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
                             id: a._id.toHexString(), name: a.name,              
@@ -433,8 +370,7 @@ function listFollowers(token, opts, cb) {
                     _cb(null, results);
                 }).catch(err => {          
                     _cb(err)        
-                });                 
-            }    
+                });
         }).catch(err => {      
             _cb(err)    
         });  
@@ -453,74 +389,53 @@ function listFollowers(token, opts, cb) {
 /*        si funcionó la petición de follow o no        */
 function follow(token, userId, cb){
     MongoClient.connect(url).then(client => {  
-
         /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
         _cb = function (err) {      
-            client.close();      
-            cb(err);    
+            client.close();  cb(err);       
         }   
-
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
         let users = db.collection(colecciones.users);    
 
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-            if (!_user) {
-                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            }else {        
-                /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
-                users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
-                    if (!_userId) {
-                        /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
-                        print((messages.cmd.follow.no_exists.replace("%userID%",userId)), 0);
-                        _cb(null);  
-                    }else {        
-                        /* Como si que está en la base de datos, procederemos a hacer el follow */
-                        /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario */
-                        if(!_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                             /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                            users.updateOne({ _id: new mongodb.ObjectId(userId) }, 
-                                { $push: { followers: _user._id } } /* Agrega el nuevo usuario al array de followers*/
-                            ).then(result => { 
-                                if(result){                                    
-                                    /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
-                                    /* Ahora falta agregar su nombre a nuestra lista de following */
-                                    users.updateOne({ _id: new mongodb.ObjectId(token) }, 
-                                        { $push: { following: _userId._id } }).then(resu => { /* Agrega el nuevo usuario al array de followings*/
-                                        if(resu){
-                                            /* Todo correcto : Manda un mensaje de Follow Complete */
-                                            printWithLog((messages.cmd.follow.success.replace("%nick%",_userId.nick)),
-                                            (messages.log.new_follow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
-                                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
-                                            /* Ahora falta agregar su nombre a nuestra lista de following */
-                                            _cb(null);
-                                        }else{
-                                            _cb(err) 
-                                        }                                           
-                                    }).catch(err => {              
-                                        _cb(err)            
-                                    });
-                                }else{
-                                    _cb(err) 
-                                }                                           
-                            }).catch(err => {              
-                                _cb(err)            
-                            });    
-                        }else{
-                            /* Error : Ya tienes follow con esa persona */
-                            print(messages.cmd.follow.already_follow, 0);
-                            _cb(null);
-                        }                      
-                    }    
-                }).catch(err => {      
-                    _cb(err)    
-                });
-            }    
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
+             /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null);  return; }
+            /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
+            users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
+                /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
+                if (!_userId) { print((messages.cmd.follow.no_exists.replace("%userID%",userId)), 0); _cb(null); return; }
+                    /* Como si que está en la base de datos, procederemos a hacer el follow */
+                    /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario */
+                    if(_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                       print(messages.cmd.follow.already_follow, 0); _cb(null); return;  /* Error : Ya tienes follow con esa persona */
+                    }
+                    /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                    users.updateOne({ _id: new mongodb.ObjectId(userId) }, { $push: { followers: _user._id } } ).then(result => { /* Agrega el nuevo usuario al array de followers*/
+                    if(result){                                    
+                        /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                        /* Ahora falta agregar su nombre a nuestra lista de following */
+                        users.updateOne({ _id: new mongodb.ObjectId(token) }, 
+                            { $push: { following: _userId._id } }).then(resu => { /* Agrega el nuevo usuario al array de followings*/
+                            if(resu){
+                                /* Todo correcto : Manda un mensaje de Follow Complete */
+                                printWithLog((messages.cmd.follow.success.replace("%nick%",_userId.nick)),
+                                (messages.log.new_follow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
+                                /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                                /* Ahora falta agregar su nombre a nuestra lista de following */
+                                _cb(null);
+                            }else _cb(err);                                          
+                        }).catch(err => {              
+                            _cb(err)            
+                        });
+                    }else _cb(err);                                             
+                }).catch(err => {              
+                    _cb(err)            
+                });           
+            }).catch(err => {      
+                _cb(err)    
+            });  
         }).catch(err => {      
             _cb(err)    
         });  
@@ -540,73 +455,53 @@ function follow(token, userId, cb){
 /*        si funcionó la petición de unfollow o no      */
 function unfollow(token, userId, cb){
     MongoClient.connect(url).then(client => {  
-
         /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
         _cb = function (err) {      
-            client.close();      
-            cb(err);    
+            client.close(); cb(err);    
         }   
-
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
         let users = db.collection(colecciones.users);    
 
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-            if (!_user) {
-                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            }else {        
-                /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
-                users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {      
-                    if (!_userId) {
-                        /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
-                        print((messages.cmd.unfollow.no_exists.replace("%userID%",userId)), 0);
-                        _cb(null);  
-                    }else {        
-                        /* Como si que está en la base de datos, procederemos a hacer el unfollow */
-                        /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario y eliminarlo si lo es */
-                        if(_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                             /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                            users.updateOne({ _id: new mongodb.ObjectId(userId) }, 
-                                { $pull: { followers: _user._id } } /* Agrega el nuevo usuario al array */
-                            ).then(result => { 
-                                if(result){
-                                    /* Ya tenemos nuestro id removido en la lista de followers del usuario. */
-                                    /* Ahora falta remover su id de nuestra lista de following */                            
-                                    users.updateOne({ _id: new mongodb.ObjectId(token) }, 
-                                        { $pull: { following: _userId._id } } /* Agrega el nuevo usuario al array */
-                                    ).then(resu => { 
-                                        if(resu){
-                                            /* Todo correcto : Manda un mensaje de UnFollow Complete */
-                                            printWithLog((messages.cmd.unfollow.success.replace("%nick%",_userId.nick)),
-                                            (messages.log.new_unfollow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
-                                            _cb(null);
-                                        }else{
-                                            _cb(err) 
-                                        }                                           
-                                    }).catch(err => {              
-                                        _cb(err)            
-                                    });     
-                                }else{
-                                    _cb(err) 
-                                }                                           
-                            }).catch(err => {              
-                                _cb(err)            
-                            });    
-                        }else{
-                            /* Error : No sigues a esa persona */
-                            print(messages.cmd.unfollow.not_follow, 0);
-                            _cb(null);
-                        }                      
-                    }    
-                }).catch(err => {      
-                    _cb(err)    
-                });
-            }    
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
+            /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return;  }
+            /* Revisaremos si el usuario al que queremos seguir existe en la base de datos */            
+            users.findOne({ _id: new mongodb.ObjectId(userId) }).then(_userId => {   
+                /* Si no existe el UserID envía un mensaje de error y devuelve el cb */
+                if (!_userId) { print((messages.cmd.unfollow.no_exists.replace("%userID%",userId)), 0); _cb(null); return; }                    
+                    /* Como si que está en la base de datos, procederemos a hacer el unfollow */
+                    /* Pero antes tenemos que revisar si el usuario ya es follower de ese usuario y eliminarlo si lo es */
+                    if(!_userId.followers.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                        print(messages.cmd.unfollow.not_follow, 0); _cb(null); return;  /* Error : No sigues a esa persona */
+                    }
+
+                    /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                    users.updateOne({ _id: new mongodb.ObjectId(userId) }, { $pull: { followers: _user._id } } ).then(result => { /* Agrega el nuevo usuario al array */
+                    if(result){
+                        /* Ya tenemos nuestro id removido en la lista de followers del usuario. */
+                        /* Ahora falta remover su id de nuestra lista de following */                            
+                        users.updateOne({ _id: new mongodb.ObjectId(token) }, 
+                            { $pull: { following: _userId._id } } /* Agrega el nuevo usuario al array */
+                        ).then(resu => { 
+                            if(resu){
+                                /* Todo correcto : Manda un mensaje de UnFollow Complete */
+                                printWithLog((messages.cmd.unfollow.success.replace("%nick%",_userId.nick)),
+                                (messages.log.new_unfollow.replace("%user_nick%",_user.nick).replace("%target_nick%",_userId.nick)),1);
+                                _cb(null);
+                            }else _cb(err)                                              
+                        }).catch(err => {              
+                            _cb(err)            
+                        });     
+                    }else _cb(err)                                               
+                }).catch(err => {              
+                    _cb(err)            
+                });                
+            }).catch(err => {      
+                _cb(err)    
+            });       
         }).catch(err => {      
             _cb(err)    
         });  
@@ -640,25 +535,30 @@ function addTweet(token, content, cb){
         /* Si el usuario está en la base de datos es una consulta válida y procedemos */
         users.findOne({ _id: new mongodb.ObjectId(token) })
         .then(_user => {      
-            if (!_user) {
-                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-                print(messages.cmd.err.no_token, 0);
-                _cb(null);  
-            }else {        
-                let tweet = {
-                    owner : _user._id,
-                    content : content,
-                    retweets : [],
-                    like : [],
-                    dislike : []
-                } 
-                /* Ejecuta insertOne para crear e insertar el tweet en la base de datos */        
-                tweets.insertOne(tweet).then(result => {              
-                    _cb(null, { id: result.insertedId.toHexString(), owner: _user._id, content: content });            
-                }).catch(err => {              
-                    _cb(err)            
-                });
-            }    
+             /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; }
+            
+            /* Creación de Tweet : Estructura */
+            console.log(content);
+            let contentMsg = content.replace(/'/g, '');
+            let tweet = {
+                owner : {
+                    id : _user._id,
+                    name : _user.name + " " + _user.surname,
+                    nick : _user.nick
+                },
+                content : contentMsg,
+                retweets : [],
+                like : [],
+                dislike : []
+            } 
+
+            /* Ejecuta insertOne para crear e insertar el tweet en la base de datos */        
+            tweets.insertOne(tweet).then(result => {              
+                _cb(null, { id: result.insertedId.toHexString(), owner: _user._id, content: contentMsg });            
+            }).catch(err => {              
+                _cb(err)            
+            });   
         }).catch(err => {      
             _cb(err)    
         });  
@@ -692,57 +592,201 @@ function listTweets(token, opts, cb) {
         let users = db.collection(colecciones.users);  
         let tweets = db.collection(colecciones.tweets);   
 
-        /* Búsqueda de todos los usuarios para agregarlos a un array. */
-        users.find({}).toArray().then(rs => {
-            let re = rs.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
-                return {              
-                    id : a._id.toHexString(), owner: a.nick          
-                };          
-            });
-            const mapa = new Map(re.map(z => [z.id, z]));
-            /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-            /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
-            users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
-                if (!_user) {
-                    print(messages.cmd.err.no_token, 0);
-                    _cb(null);  
-                }});
-                let jsonQuery = {};
-                    if(opts.q){
-                    const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
+        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
+            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; }
+
+            let jsonQuery = {};
+            if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
+                const qu = opts.q.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
                     .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
                     .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
                         
-                        try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
-                        catch(err){
-                            print(messages.cmd.listTweets.invalid_format, 0); // Mensaje de inválid format JSON.
-                            _cb(null);
-                            return;
-                        }          
-                    }                          
-                    let _query = jsonQuery; let _opts = {};
-                    if (opts.i) _opts.skip = opts.i;
-                    if (opts.c) _opts.limit = opts.c;
-                    if (opts.s) _opts.s = [[opts.s.slice(1),
-                    (opts.s.charAt(0) == '+' ? 1 : -1)]];
-                    tweets.find(_query, _opts).toArray().then(tweet => { 
-                        let results = tweet.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
-                            return {              
-                                id: a._id.toHexString(), owner: mapa.get(a.owner.toHexString()).owner, content: a.content.replace(/'/g, '')          
-                            };          
-                        });
-                        _cb(null, results);
-                    }).catch(err => {          
-                        _cb(err)        
-                    });
+                try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+                catch(err){ print(messages.cmd.listTweets.invalid_format, 0); _cb(null); return; } // Mensaje de inválid format JSON.        
+            }  
 
+            let _query = jsonQuery; let _opts = {};
+            if (opts.i) _opts.skip = opts.i;
+            if (opts.c) _opts.limit = opts.c;
+            if (opts.s) _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
+            tweets.find(_query, _opts).toArray().then(tweet => { 
+                let results = tweet.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
+                    return {              
+                        id: a._id.toHexString(), owner: a.owner.nick, content: a.content          
+                    };          
+                });
+                _cb(null, results);
             }).catch(err => {          
                 _cb(err)        
             });
+        });
     }).catch(err => {    
         cb(err);  
     }); 
 }
+
+/*======================================================*/
+/*                  MENSAJES >> LIKE                    */
+/*======================================================*/
+/*   Esta función sirve para dar "Me gusta" a un tweet  */
+/*                 Requiere un <token>                  */
+/*     Necesita una ID del Tweet para identificarlo     */
+/*          Devuelve un <cb> con el resultado.          */
+function like(token, tweetId, cb){
+    MongoClient.connect(url).then(client => {  
+
+        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+        _cb = function (err) {      
+            client.close();      
+            cb(err);    
+        }   
+
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users); 
+        let tweets = db.collection(colecciones.tweets);     
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => { 
+            if (!_user) {
+                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+                print(messages.cmd.err.no_token, 0);
+                _cb(null); return; 
+            }
+            /* Revisaremos si el Tweet al que queremos dar like existe en la base de datos */            
+            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
+                if (!tw) {
+                    /* Si no existe el TweetID envía un mensaje de error y devuelve el cb */
+                    print((messages.cmd.like.no_exists.replace("%tweetID%",tweetId)), 0);
+                    _cb(null); return;  
+                }
+                /* Tenemos que revisar que no se pueda dar like la misma persona a su propio tweet */
+                if(tw.owner.id.toString() === _user._id.toHexString()){
+                    print(messages.cmd.like.your_tweet, 0);
+                    _cb(null);  return;  
+                }
+                /* Como si que está en la base de datos, procederemos a hacer el like */
+                /* Pero antes tenemos que revisar si el usuario ya ha dado like previamente a ese mensaje */
+                if(tw.like.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                    /* Error : Ya tienes follow con esa persona */
+                    print(messages.cmd.like.already_like, 0);
+                    _cb(null); return;
+                }
+                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
+                    {
+                        $push: { like: _user._id },
+                        $pull: { dislike: _user._id }
+                    }
+                    ).then(result => {  /* Agrega el nuevo usuario al array de likes*/
+                    
+                        if(result){                                    
+                            /* Ya tenemos nuestro nombre agregado en la lista likes del Tweet. */
+                            /* Todo correcto : Manda un mensaje de like Complete */
+                            printWithLog((messages.cmd.like.success.replace("%nick%",tw.owner.nick)),
+                            (messages.log.new_like.replace("%user_liked%",_user.nick).replace("%owner_nick%",tw.owner.nick)
+                            .replace("%content%",tw.content).replace("%tweetID%",tweetId)),1);
+                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                            /* Ahora falta agregar su nombre a nuestra lista de following */
+                            _cb(null);
+                        }else _cb(err);
+                }).catch(err => {              
+                    _cb(err)            
+                });
+            }).catch(err => {      
+                _cb(err)    
+            });    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
+/*======================================================*/
+/*                 MENSAJES >> DISLIKE                  */
+/*======================================================*/
+/*    Función sirve para dar "No me gusta" a un tweet   */
+/*                 Requiere un <token>                  */
+/*     Necesita una ID del Tweet para identificarlo     */
+/*          Devuelve un <cb> con el resultado.          */
+function dislike(token, tweetId, cb){
+    MongoClient.connect(url).then(client => {  
+        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+        _cb = function (err) {      
+            client.close();      
+            cb(err);    
+        }   
+        /* Creamos la conexión a la base de datos */ 
+        let db = client.db(database);    
+        let users = db.collection(colecciones.users); 
+        let tweets = db.collection(colecciones.tweets);     
+
+        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
+        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
+        users.findOne({ _id: new mongodb.ObjectId(token) })
+        .then(_user => { 
+            if (!_user) {
+                /* Si no existe el Token envía un mensaje de error y devuelve el cb */
+                print(messages.cmd.err.no_token, 0);
+                _cb(null); return; 
+            }
+            /* Revisaremos si el Tweet al que queremos dar dislike existe en la base de datos */            
+            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
+                if (!tw) {
+                    /* Si no existe el TweetID envía un mensaje de error y devuelve el cb */
+                    print((messages.cmd.dislike.no_exists.replace("%tweetID%",tweetId)), 0);
+                    _cb(null); return;  
+                }
+                /* Tenemos que revisar que no se pueda dar dislike la misma persona a su propio tweet */
+                if(tw.owner.id.toString() === _user._id.toHexString()){
+                    print(messages.cmd.dislike.your_tweet, 0);
+                    _cb(null);  return;  
+                }
+                /* Como si que está en la base de datos, procederemos a hacer el dislike */
+                /* Pero antes tenemos que revisar si el usuario ya ha dado dislike previamente a ese mensaje */
+                if(tw.dislike.map(id => id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                    /* Error : Ya tienes follow con esa persona */
+                    print(messages.cmd.dislike.already_dislike, 0);
+                    _cb(null); return;
+                }
+                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
+                tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
+                    {
+                        $push: { dislike: _user._id },
+                        $pull: { like: _user._id }
+                    }
+                    ).then(result => {  /* Agrega el nuevo usuario al array de dislikes*/
+                    
+                        if(result){                                    
+                            /* Ya tenemos nuestro nombre agregado en la lista dislikes del Tweet. */
+                            /* Todo correcto : Manda un mensaje de dislike Complete */
+                            printWithLog((messages.cmd.dislike.success.replace("%nick%",tw.owner.nick)),
+                            (messages.log.new_dislike.replace("%user_disliked%",_user.nick).replace("%owner_nick%",tw.owner.nick)
+                            .replace("%content%",tw.content).replace("%tweetID%",tweetId)),1);
+                            /* Ya tenemos nuestro nombre agregado en la lista de followers del usuario. */
+                            /* Ahora falta agregar su nombre a nuestra lista de following */
+                            _cb(null);
+                        }else _cb(err);
+                }).catch(err => {              
+                    _cb(err)            
+                });
+            }).catch(err => {      
+                _cb(err)    
+            });    
+        }).catch(err => {      
+            _cb(err)    
+        });  
+    }).catch(err => {    
+        cb(err);  
+    }); 
+}
+
 
 
 /* Imprime un mensaje con colores más un Log al final */
@@ -775,4 +819,6 @@ module.exports = {
     listFollowers,
     addTweet,
     listTweets,
+    like,
+    dislike,
 }

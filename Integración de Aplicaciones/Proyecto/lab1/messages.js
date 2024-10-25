@@ -14,24 +14,26 @@ log = {
     new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
     new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <nick>:%nick% y con el contenido: %content%.",
+    new_like : "Se ha registrado un nuevo like del usuario: %user_liked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
+    new_dislike : "Se ha registrado un nuevo dislike del usuario: %user_disliked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
 }
 
 cmd = {
   login : {
     invalid_credentials : ">> El usuario o la contraseña especificados no existen en nuestra base de datos.",
-    no_email : ">> Necesitas especificar un email. \x1b[33mComando\x1b[0m: \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m ",
-    no_password : ">> Debes introducir una contraseña. \x1b[33mComando\x1b[0m: \x1b[32mlogin\x1b[0m -e \x1b[32m<email>\x1b[0m o \x1b[32m<password>\x1b[0m.",
+    no_email : ">> Especifica un \x1b[33m-e <email>\x1b[0m. Utiliza \x1b[33mlogin --help\x1b[0m para más información. ",
+    no_password : ">> Debes introducir un \x1b[33m-p <password>\x1b[0m. Utiliza \x1b[33mlogin --help\x1b[0m para más información. ",
     success : ">> Bievenido a Twitter \x1b[1m\x1b[33m%nick%\x1b[0m"
   },
   addUser : {
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
-    no_name : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nombre>",
-    no_surname : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <apellido>",
-    no_email : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <email>",
-    no_password : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <password>",
-    no_nick : ">> Se ha cancelado la acción para el usuario porque falta el parámetro <nick>",
-    email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado.",
-    nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado.",
+    no_name : ">> No se ha detectado el parámetro \x1b[33m-n <name>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información. ",
+    no_surname : ">> No se ha detectado el parámetro \x1b[33m-s <surname>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información.",
+    no_email : ">> No se ha detectado el parámetro \x1b[33m-e <email>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información.",
+    no_password : ">> No se ha detectado el parámetro \x1b[33m-p <password>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información.",
+    no_nick : ">> No se ha detectado el parámetro \x1b[33m-i <nick>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información.",
+    email_exists : ">> No se ha podido completar el registro debido a que ya existe un usuario con ese email registrado.",
+    nick_exists : ">> No se ha podido completar el registro debido a que ya existe un usuario con ese nick registrado.",
     success : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
   },
   updateUser : {
@@ -70,6 +72,22 @@ cmd = {
   listTweets : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistTweets --help\x1b[0m para más información.",
   },
+  like : {
+    no_id : ">> Necesitas especificar un tweetID. \x1b[33mComando\x1b[0m: \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m",
+    no_exists : ">> El tweet con ID = %tweetID% no existe en la base de datos.",
+    already_like : ">> Ya diste like previamente a este Tweet.",
+    your_tweet : ">> No puedes dar like a tus propios Tweets.",
+    success : ">> Has dado un like al Tweet publicado por %nick%",
+  },
+  dislike : {
+    no_id : ">> Necesitas especificar un tweetID. \x1b[33mComando\x1b[0m: \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m",
+    no_exists : ">> El tweet con ID = %tweetID% no existe en la base de datos.",
+    already_dislike : ">> Ya diste dislike previamente a este Tweet.",
+    your_tweet : ">> No puedes dar dislike a tus propios Tweets.",
+    success : ">> Has dado un dislike al Tweet publicado por %nick%",
+  },
   err : {
     no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
   },
@@ -85,21 +103,31 @@ listUsers -q '{ name : "test" }'
 */
 menu =
 `
-=======================================================================
-                            MENÚ PRINCIPAL 
-=======================================================================
+=================================================
+                 MENÚ PRINCIPAL 
+=================================================
+
+    ••••• COMANDOS PARA LOS USUARIOS •••••
 
 \x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                       
 \x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
-\x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
-\x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m                                     
+\x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
+\x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
 \x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
 \x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
-\x1b[33m7.\x1b[0m \x1b[32mexit\x1b[0m
 
-Para más información acerca de un comando específico utiliza \x1b[33m<cmd> --help\x1b[0m
-Esto te ayudará a comprender con más detalle los valores de cada comando.
+    ••••• COMANDOS PARA LOS TWEETS •••••
 
+\x1b[33m7.\x1b[0m \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m 
+\x1b[33m8.\x1b[0m \x1b[32maddRetweet\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                       
+\x1b[33m9.\x1b[0m \x1b[32mlistTweets\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m   
+\x1b[33m10.\x1b[0m \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                  
+\x1b[33m11.\x1b[0m \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                    
+
+\x1b[33m12.\x1b[0m \x1b[32mexit\x1b[0m
+
+Para más información acerca de un comando
+Haz uso de \x1b[33m<cmd> --help\x1b[0m
 `;
 
 login_menu =
@@ -300,7 +328,8 @@ help = {
 
  • \x1b[33mEspecificaciones\x1b[0m: 
    - Solamente se podrá dar Like una vez al mismo Tweet.
-   - En caso de haber dado Like a algún Tweet, no se podrá dar dislike posteriormente.
+   - No se podrá dar like a un tweet publicado por el propio usuario.
+   - En caso de haber dado Like a algún Tweet, se eliminará el Dislike en caso de existir.
 
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,
@@ -316,7 +345,8 @@ help = {
 
  • \x1b[33mEspecificaciones\x1b[0m: 
    - Solamente se podrá dar Dislike una vez al mismo Tweet.
-   - En caso de haber dado Dislike a algún Tweet, no se podrá dar Like posteriormente.
+   - No se podrá dar dislike a un tweet publicado por el propio usuario.
+   - En caso de haber dado Dislike a algún Tweet, se eliminará el Like en caso de existir.
 
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,

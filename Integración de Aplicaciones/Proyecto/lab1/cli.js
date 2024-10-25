@@ -46,7 +46,7 @@ function menu(args, cb) {
                      if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.id == undefined){  print(messages.cmd.follow.no_id, 0);  cb(); break;  }
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  print(messages.cmd.follow.no_id, 0);  cb(); break;  }
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.follow.no_length, 0); cb(); break;   }
 
@@ -61,7 +61,7 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.follows); cb(); break;  } 
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.id == undefined){  print(messages.cmd.unfollow.no_id, 0);  cb(); break;  }
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  print(messages.cmd.unfollow.no_id, 0);  cb(); break;  }
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.unfollow.no_length, 0); cb(); break;   }
 
@@ -109,7 +109,8 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.addTweet); cb(); break;  } 
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if((args.c == undefined) || !args.c){ print(messages.cmd.addTweet.no_content, 0); cb(); break; }
+
+                    if(!args.c || (typeof args.c !== 'string' || args.c.trim() === '')){ print(messages.cmd.addTweet.no_content, 0); cb(); break; }
 
                     // Llama al método del Model para añadir el Tweet.
                     model.addTweet(token, args.c, (err, res) => {
@@ -132,6 +133,34 @@ function menu(args, cb) {
                         else { console.table(res); cb(); }
                     })  
                 break;
+                case "like": /* Comando: like --id <tweetID> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.like); cb(); break;  } 
+
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  print(messages.cmd.like.no_id, 0);  cb(); break;  }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.cmd.like.no_length, 0); cb(); break;   }
+                    // Llama al método del Model.
+                    model.like(token, args.id, (err) => {
+                        if(err) console.log(err.stack);
+                        cb();
+                    })  
+                break;
+                case "dislike": /* Comando: dislike --id <tweetID> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.dislike); cb(); break;  } 
+
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  print(messages.cmd.dislike.no_id, 0);  cb(); break;  }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.cmd.dislike.no_length, 0); cb(); break;   }
+                    // Llama al método del Model.
+                    model.dislike(token, args.id, (err) => {
+                        if(err) console.log(err.stack);
+                        cb();
+                    })  
+                break;
                 case "exit":
                     if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));
                     else console.log(messages.cmd.exit.not_logged);
@@ -149,8 +178,8 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.login); cb(); break;  }
 
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(args.e == undefined){ print(messages.cmd.login.no_email, 0);  cb(); break; }
-                    else if(args.p == undefined){ print(messages.cmd.login.no_password, 0); cb(); break; }
+                    if (!args.e || (typeof args.e !== 'string' || args.e.trim() === '')){ print(messages.cmd.login.no_email, 0);  cb(); break; }
+                    else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.login.no_password, 0); cb(); break; }
      
                     model.login(args.e, args.p, (err, _token, _user) => { /* Llama al método login del Model */
                         if(err) console.log(err);
@@ -175,11 +204,11 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
                     
                     /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if((args.n == undefined) || !args.n){ print(messages.cmd.addUser.no_name, 0); cb(); break; }
-                    else if((args.s == undefined) || !args.s){ print(messages.cmd.addUser.no_surname, 0); cb(); break; }
-                    else if((args.e == undefined) || !args.e){ print(messages.cmd.addUser.no_email, 0); cb(); break; }
-                    else if((args.p == undefined) || !args.p){ print(messages.cmd.addUser.no_password, 0); cb(); break; }
-                    else if((args.i == undefined) || !args.i){ print(messages.cmd.addUser.no_nick, 0); cb(); break; }
+                    if(!args.n || (typeof args.n !== 'string' || args.n.trim() === '')){ print(messages.cmd.addUser.no_name, 0); cb(); break; }
+                    else if(!args.s || (typeof args.s !== 'string' || args.s.trim() === '')){ print(messages.cmd.addUser.no_surname, 0); cb(); break; }
+                    else if(!args.e || (typeof args.e !== 'string' || args.e.trim() === '')){ print(messages.cmd.addUser.no_email, 0); cb(); break; }
+                    else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.addUser.no_password, 0); cb(); break; }
+                    else if(!args.i || (typeof args.i !== 'string' || args.i.trim() === '')){ print(messages.cmd.addUser.no_nick, 0); cb(); break; }
     
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };

@@ -35,7 +35,10 @@ A NIVEL PROGRAMACIÓN:
 - Posibilidad de actualizar al usuario por parámetros una a uno de forma individual y no todos a la vez.
 - Cambio en el Prompt a la hora de loguearse o actualizar el nick de usuario.
 - Chequeos intensivos a la hora de actualizar datos (Cancelar si el email o nick ya está en uso por otro usuario).
-- Almacenamiento de Follow y Unfollow por ID de Mongo Object.
+- Almacenamiento de Follow y Unfollow por ID de Mongo Object para facilitar búsquedas.
+- Creación de un campo Owner en la base de datos de Tweets donde están los datos del creador del Tweet para fácil gestión.
+- Like y Dislike alternados. Cuando se da like se quita el dislike (en caso de existir) y de igual modo al contrario.
+- Revisiones en Like y Dislike para no darse a uno mismo o repetir acciones.
 
 A NIVEL VISUAL:
 - Diseño elegante.
