@@ -45,12 +45,15 @@ cmd = {
   },
   listUsers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistUsers --help\x1b[0m para más información.",
+    no_results : ">> No existen resultados con esos criterios de búsqueda.",
   },
   listFollowing : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowing --help\x1b[0m para más información.",
+    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿Nadie te sigue? o ¿Búsqueda demasiado intensiva?",
   },
   listFollowers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowers --help\x1b[0m para más información.",
+    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿No sigues a nadie? o ¿Búsqueda demasiado intensiva?",
   },
   follow : {
     no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
@@ -80,6 +83,7 @@ cmd = {
   },
   listTweets : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistTweets --help\x1b[0m para más información.",
+    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿Será que nadie envió tweets todavía? o quizás ¿Hiciste una búsqueda demasiado intensiva?",
   },
   like : {
     no_id : ">> Necesitas especificar un tweetID. \x1b[33mComando\x1b[0m: \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m",
