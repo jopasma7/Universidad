@@ -241,6 +241,10 @@ function listUsers(token, opts, cb) {
                  if (opts.c) _opts.limit = opts.c;
                  if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                  users.find(_query, _opts).toArray().then(_results => {
+                    if(_results.length == 0){
+                        print(messages.cmd.listUsers.no_results, 2);
+                        _cb(null); return;
+                    }
                      let results = _results.map((user) => {            
                          return {              
                              id: user._id.toHexString(), name: user.name,              
@@ -300,6 +304,10 @@ function listFollowing(token, opts, cb) {
                 if (opts.c) _opts.limit = opts.c;
                 if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                 users.find({ $and: [_query,{ _id: { $in: _user.following } }] }, _opts).toArray().then(usuarios => { 
+                    if(usuarios.length == 0){
+                        print(messages.cmd.listFollowing.no_results, 2);
+                        _cb(null); return;
+                    }
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
                             id: a._id.toHexString(), name: a.name,              
@@ -362,6 +370,10 @@ function listFollowers(token, opts, cb) {
                 if (opts.c) _opts.limit = opts.c;
                 if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                 users.find({ $and: [_query,{ _id: { $in: _user.followers } }] }, _opts).toArray().then(usuarios => { 
+                    if(usuarios.length == 0){
+                        print(messages.cmd.listFollowers.no_results, 2);
+                        _cb(null); return;
+                    }
                     let results = usuarios.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                         return {              
                             id: a._id.toHexString(), name: a.name,              
@@ -692,6 +704,10 @@ function listTweets(token, opts, cb) {
             if (opts.c) _opts.limit = opts.c;
             if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
             tweets.find(_query, _opts).toArray().then(tweet => { 
+                if(tweet.length == 0){
+                    print(messages.cmd.listTweets.no_results, 2);
+                    _cb(null); return;
+                }
                 let results = tweet.map((a) => { // Mapeamos el vector para mostrar únicamente los valores que queremos.        
                     return {              
                         id: a._id.toHexString(), owner: a.owner.nick, content: a.content, retweets: a.retweets.length, like: a.like.length, dislike: a.dislike.length         
