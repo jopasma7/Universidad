@@ -1,5 +1,6 @@
 const axios = require("axios");
 const url = 'http://localhost:8080/twitter';
+const messages = require("./messages"); 
 
 /*======================================================*/
 /*                  USUARIOS >> LOGIN                   */
@@ -31,20 +32,22 @@ function login(email, password, cb) {
 /*       Si logró o falló la creación del usuario       */
 
 function addUser(user, cb) {  
-    if (!user.name) cb(new Error('Property name missing'));
-    else if (!user.surname) cb(new Error('Property surname missing'));
-    else if (!user.email) cb(new Error('Property email missing'));
-    else if (!user.nick) cb(new Error('Property nick missing'));
-    else if (!user.password) cb(new Error('Property password missing'));
-    else {
+    /*if (!user.name) cb(printErr(messages.cmd.addUser.no_name,0));
+    else if (!user.surname) cb(printErr(messages.cmd.addUser.no_surname,0));
+    else if (!user.email) cb(printErr(messages.cmd.addUser.no_email,0));
+    else if (!user.nick) cb(printErr(messages.cmd.addUser.no_nick,0));
+    else if (!user.password) cb(printErr(messages.cmd.addUser.no_password,0));
+    else {*/
         axios.post(url + '/users', user)
             .then(res => {
+                console.log("yes");
                 cb(null, res.data)
             })
             .catch(err => {
                 cb(err);
             });
-    }
+            
+    
 }
 
 /*======================================================*/
@@ -214,21 +217,33 @@ function dislike(token, tweetId, cb){
 }
 
 /* Imprime un mensaje con colores más un Log al final */
-function printWithLog(message, logMessage, color){
-    print(message, color);
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
-}
-
-/* Imprime un mensaje con colores */
-function print(message, color){
+function ErrWithLog(message, logMessage, color){
+    let newMSG = "";
     switch(color){
-        case 0: console.log('\x1b[31m[Error]\x1b[0m ' + message);
+        case 0: newMSG = '\x1b[31m[Error]\x1b[0m ' + message;
         break;
-        case 1: console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
+        case 1: newMSG = '\x1b[32m[Éxito]\x1b[0m ' + message;
         break;
-        case 2: console.log('\x1b[34m[Info]\x1b[0m ' + message);
+        case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
         break;
     }
+    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
+    return new Error(newMSG)
+}
+
+function printErr(message, color){
+    let newMSG = "";
+    switch(color){
+        case 0: newMSG = '\x1b[31m[Error]\x1b[0m ' + message;
+        break;
+        case 1: newMSG = '\x1b[32m[Éxito]\x1b[0m ' + message;
+        break;
+        case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
+        break;
+        case 3: newMSG = message;
+        break;
+    }
+    return new Error(newMSG)
 }
 
 
@@ -246,4 +261,7 @@ module.exports = {
     listTweets,
     like,
     dislike,
+
+    printErr,
+    ErrWithLog
 }

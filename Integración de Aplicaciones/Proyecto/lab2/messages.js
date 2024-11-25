@@ -7,6 +7,7 @@
 prompt = "\x1b[34m[TW Lite]\x1b[0m : "
 log = {
     invalid_credentials : "Registrando autentificación fallida para el email: <%email%> y password: <%password%>",
+    add_failed : "Se acaba de registrar una petición de creación de usuario fallida en el servidor. Name: <%name%>, Surname: <%surname%>, Email: <%email%>, Password: <%password%>, Nick: <%nick%>,",
     user_join : "Acaba de acceder a la plataforma el usuario <%nick%> con email: <%email%>",
     follows_err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
     new_follow : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",

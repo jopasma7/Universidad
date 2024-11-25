@@ -1,6 +1,7 @@
 const model = require('./model_mongo');
 const express = require('express');
 const bodyParser = require('body-parser');
+const { printErr } = require('./model_rest');
 
 let app = express();
 app.use(bodyParser.json());
@@ -20,11 +21,11 @@ app.use(function (req, res, next) {
 
 // Crear usuarios
 app.post('/twitter/users', function (req, res) {
-    console.log('add user  ' + JSON.stringify(req.body));
+    //console.log('add user  ' + JSON.stringify(req.body));
     model.addUser(req.body, (err, user) => {
       if (err) {
-        console.log(err.stack);
-        res.status(400).send(err);
+        //console.log(err.message);
+        res.status(400).send(err.message);
       } else res.send(user);
     });
   });
@@ -33,14 +34,14 @@ app.post('/twitter/users', function (req, res) {
 
 //Login
 app.post('/twitter/sessions', function (req, res) {
-    console.log('login ' + JSON.stringify(req.body));
+    //console.log('login ' + JSON.stringify(req.body));
     if (!req.body.email || !req.body.password) 
-      res.status(400).send('Parameters missing');
+      res.status(400).send(printErr("Falta el Email o Password",0));
     else {
       model.login(req.body.email, req.body.password, (err, token, user) => {
         if (err) {
-          console.log(err.stack);
-          res.status(400).send(err);
+          console.log(err.message)
+          res.status(400).send(err.message);
         } else {
           res.send({ token: token, user: user });
         }

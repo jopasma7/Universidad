@@ -211,7 +211,10 @@ function menu(args, cb) {
                     else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.login.no_password, 0); cb(); break; }
      
                     model.login(args.e, args.p, (err, _token, _user) => { /* Llama al método login del Model */
-                        if(err) console.log(err);
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
+                            else  console.log(err.message); // Esto maneja errores que no vienen del servidor
+                        }
                         else if(_token == undefined) cb();
                         else {
                             token = _token; user = _user;
@@ -233,27 +236,26 @@ function menu(args, cb) {
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
                     
-                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined 
                     if(!args.n || (typeof args.n !== 'string' || args.n.trim() === '')){ print(messages.cmd.addUser.no_name, 0); cb(); break; }
                     else if(!args.s || (typeof args.s !== 'string' || args.s.trim() === '')){ print(messages.cmd.addUser.no_surname, 0); cb(); break; }
                     else if(!args.e || (typeof args.e !== 'string' || args.e.trim() === '')){ print(messages.cmd.addUser.no_email, 0); cb(); break; }
                     else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.addUser.no_password, 0); cb(); break; }
                     else if(!args.i || (typeof args.i !== 'string' || args.i.trim() === '')){ print(messages.cmd.addUser.no_nick, 0); cb(); break; }
-    
+                    */
+
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
-      
-                    model.addUser(u, (err, u) =>{ /* Llamada a la función addUser() del Model */
-                        /* Comprobación de si el método addUser devuelve un usuario undefined */
-                        /* En caso de devolverlo es porque ya existe el usuario en la base de datos y devuelve error */
-                        if(u != undefined) {
-                            if(err) console.log(err);
-                            else {
-                                printWithLog(messages.cmd.addUser.success, (messages.log.new_user
-                                    .replace("%name%", args.n).replace("%surname%", args.s)
-                                    .replace("%email%", args.e).replace("%password%", args.p)
-                                    .replace("%nick%", args.i)),1);
-                            }
+                    model.addUser(u, (err, res) => { /* Llamada a la función addUser() del Model */
+                        /* Comprobación de si el método addUser devuelve un usuario o errores */
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
+                            else  console.log(err.message); // Esto maneja errores que no vienen del servidor                     
+                        }else {
+                            printWithLog(messages.cmd.addUser.success, (messages.log.new_user
+                                .replace("%name%", args.n).replace("%surname%", args.s)
+                                .replace("%email%", args.e).replace("%password%", args.p)
+                                .replace("%nick%", args.i)),1);
                         }
                         cb();   
                     })

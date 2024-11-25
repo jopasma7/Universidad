@@ -70,8 +70,9 @@ function addUser(user, cb) {
     /* Realizamos una serie de comprobaciones para revisar si el <user> que nos pasaron */
     /* tiene todos los parámetros correctamente establecidos. */
     if(!user.name || !user.surname || !user.email || !user.nick || !user.password){
-        print(messages.cmd.addUser.no_param, 0);
-        cb(); return;
+        return cb(ErrWithLog(messages.cmd.addUser.no_param, (messages.log.add_failed
+            .replace("%name%",user.name).replace("%surname%",user.surname)
+            .replace("%email%",user.email).replace("%nick%",user.nick).replace("%password%",user.password)), 0)); 
     }
     
     MongoClient.connect(url).then((client) => {           
@@ -86,14 +87,13 @@ function addUser(user, cb) {
         
         /* Revisamos con FindOne si existe e1 usuario con el <email> y <password> en la base de datos */
         /* Para revisar si el usuario insertado ya existe en la Database */
-        /* En caso de no existir creamos uno nuevo y si existe devolver error */
+        /* En caso de no existir creamos uno nuevo */
         users.findOne({$or:[{ email: user.email },{ nick: user.nick }] }).then((_user) => { 
                 /* Si existe, Tenemos que devolver el callback avisando de que ya existe */
-                /* Para ello vamos a mandarle un usuario undefined y haremos una comprobación posterior para evitar lanzar un error */ 
                 if(_user){ 
-                    if (_user.email == user.email) print(messages.cmd.addUser.email_exists, 0);
-                    else if (_user.nick == user.nick) print(messages.cmd.addUser.nick_exists, 0);
-                    _cb(null); return;
+                    if (_user.email == user.email) _cb(printErr(messages.cmd.addUser.email_exists, 0));
+                    else if (_user.nick == user.nick) _cb(printErr(messages.cmd.addUser.nick_exists, 0));
+                    return;
                 }       
                 /* Si no existe, hay que crear el usuario y devolverlo por el callback */
                 user.following = []; 
@@ -883,13 +883,14 @@ function dislike(token, tweetId, cb){
     }); 
 }
 
-/* Imprime un mensaje con colores más un Log al final */
+/*
+/* Imprime un mensaje con colores más un Log al final 
 function printWithLog(message, logMessage, color){
     print(message, color);
     console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
 }
 
-/* Imprime un mensaje con colores */
+/* Imprime un mensaje con colores 
 function print(message, color){
     switch(color){
         case 0: console.log('\x1b[31m[Error]\x1b[0m ' + message);
@@ -899,7 +900,7 @@ function print(message, color){
         case 2: console.log('\x1b[34m[Info]\x1b[0m ' + message);
         break;
     }
-}
+}*/
 
 /* Imprime un mensaje con colores más un Log al final */
 function ErrWithLog(message, logMessage, color){
@@ -913,7 +914,7 @@ function ErrWithLog(message, logMessage, color){
         break;
     }
     console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
-    return new Error(newMSG)
+    return new Error(newMSG);
 }
 
 function printErr(message, color){
@@ -926,7 +927,7 @@ function printErr(message, color){
         case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
         break;
     }
-    return new Error(newMSG)
+    return new Error(newMSG);
 }
 
 
