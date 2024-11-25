@@ -1,6 +1,7 @@
 const axios = require("axios");
 const url = 'http://localhost:8080/twitter';
 const messages = require("./messages"); 
+const { printErr, ErrWithLog, sendLog } = require('./model_mongo');
 
 /*======================================================*/
 /*                  USUARIOS >> LOGIN                   */
@@ -11,14 +12,18 @@ const messages = require("./messages");
 /*         Si logró o falló la autentificación.         */
 
 function login(email, password, cb) {  
-    axios.post(url + '/sessions',
-        { email: email, password: password })
-        .then(res => {
-            cb(null, res.data.token, res.data.user)
-        })
-        .catch(err => {
-            cb(err);
-        });
+    if (!email) cb(printErr(messages.cmd.login.no_email, 0));
+    else if (!password) cb(printErr(messages.cmd.login.no_password, 0));
+    else {
+        axios.post(url + '/sessions',
+            { email: email, password: password })
+            .then(res => {
+                cb(null, res.data.token, res.data.user)
+            })
+            .catch(err => {
+                cb(err);
+            });
+    }
 }
 
 
@@ -32,22 +37,22 @@ function login(email, password, cb) {
 /*       Si logró o falló la creación del usuario       */
 
 function addUser(user, cb) {  
-    /*if (!user.name) cb(printErr(messages.cmd.addUser.no_name,0));
-    else if (!user.surname) cb(printErr(messages.cmd.addUser.no_surname,0));
-    else if (!user.email) cb(printErr(messages.cmd.addUser.no_email,0));
-    else if (!user.nick) cb(printErr(messages.cmd.addUser.no_nick,0));
-    else if (!user.password) cb(printErr(messages.cmd.addUser.no_password,0));
-    else {*/
+    // Comprobación de los parámetros. Si falta alguno imprime error en cliente y servidor (Log)
+    if (!user.name) cb(printErr(messages.cmd.addUser.no_name, 0));
+    else if (!user.surname) cb(printErr(messages.cmd.addUser.no_surname, 0));
+    else if (!user.email) cb(printErr(messages.cmd.addUser.no_email, 0));
+    else if (!user.nick) cb(printErr(messages.cmd.addUser.no_nick, 0));
+    else if (!user.password) cb(printErr(messages.cmd.addUser.no_password, 0));
+    else {
         axios.post(url + '/users', user)
             .then(res => {
-                console.log("yes");
                 cb(null, res.data)
             })
             .catch(err => {
                 cb(err);
             });
             
-    
+        }
 }
 
 /*======================================================*/
@@ -60,8 +65,17 @@ function addUser(user, cb) {
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        la lista de usuarios que hemos listado        */
 
-function updateUser(token, user, cb){
-
+function updateUser(token, newUserData, cb) {
+    // Hacemos la petición PUT con el email del usuario
+    axios.put(`${url}/users/${token}`, newUserData, {
+        params: { token: token } // El token se pasa como parámetro de consulta
+    })
+    .then(res => {
+        cb(null, res.data); // Devuelve los datos del usuario actualizado
+    })
+    .catch(err => {
+        cb(err); // Devuelve el error en caso de fallo
+    });
 }
 
 
@@ -216,36 +230,6 @@ function dislike(token, tweetId, cb){
     
 }
 
-/* Imprime un mensaje con colores más un Log al final */
-function ErrWithLog(message, logMessage, color){
-    let newMSG = "";
-    switch(color){
-        case 0: newMSG = '\x1b[31m[Error]\x1b[0m ' + message;
-        break;
-        case 1: newMSG = '\x1b[32m[Éxito]\x1b[0m ' + message;
-        break;
-        case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
-        break;
-    }
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
-    return new Error(newMSG)
-}
-
-function printErr(message, color){
-    let newMSG = "";
-    switch(color){
-        case 0: newMSG = '\x1b[31m[Error]\x1b[0m ' + message;
-        break;
-        case 1: newMSG = '\x1b[32m[Éxito]\x1b[0m ' + message;
-        break;
-        case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
-        break;
-        case 3: newMSG = message;
-        break;
-    }
-    return new Error(newMSG)
-}
-
 
 module.exports = {
     addUser,    
@@ -260,8 +244,5 @@ module.exports = {
     addRetweet,
     listTweets,
     like,
-    dislike,
-
-    printErr,
-    ErrWithLog
+    dislike
 }

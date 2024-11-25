@@ -42,15 +42,43 @@ function menu(args, cb) {
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.update); cb(); break;  } 
 
-                    /* Crea el usuario <u> con lo valores proporcionados en el comando */
-                    let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i }; 
+                    // Validar que al menos un argumento sea proporcionado
+                    if (!args.n && !args.s && !args.e && !args.p && !args.i) {
+                        print(messages.cmd.updateUser.no_param, 0);
+                        cb();
+                        break;
+                    } 
+
+                    /* Crea el usuario <newUserData> con lo valores proporcionados en el comando */
+                    const newUserData = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i }; 
                    
-                    model.updateUser(token, u, (err, u) =>{ /* Llama a la función updateUser() del Model */
-                        if(u != undefined) {
-                            if(user.nick != u.nick) rl.setPrompt("\x1b[1m\x1b[33m"+u.nick + "\x1b[0m : "); // Cambiamos el Prompt.
-                            user = u; // Reajustamos el usuario.
-                        }                     
-                        cb();                  
+                    model.updateUser(token, newUserData, (err, res) =>{ /* Llama a la función updateUser() del Model */
+                        if(err){
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
+                            cb();
+                        }
+                        if(res != undefined) {
+                            print((messages.cmd.updateUser.success.replace("%nick%", res.nick)), 1);
+                            if(user.nick != res.nick) rl.setPrompt("\x1b[1m\x1b[33m"+res.nick + "\x1b[0m : "); // Cambiamos el Prompt.
+                            user = res; // Reajustamos el usuario.
+                            cb(); 
+                        }                                     
+                    })
+                break;
+                case "listUsers": /* Comando: listUsers -q <query> -i <init> -c <count> */
+                    /* Mostramos la ayuda del comando con el parámetro --help */
+                    if(args.help != undefined){ console.log(messages.help.listUsers); cb(); break;  } 
+
+                    // Llama al método del Model para listar a los Usuarios.
+                    model.listUsers(token, args, (err, res) => {
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
+                            cb();
+                        }
+                        else if(res == undefined) cb();
+                        else { console.table(res); cb(); }
                     })
                 break;
                 case "follow": /* Comando: follow -id <userID> */
@@ -82,17 +110,6 @@ function menu(args, cb) {
                         if(err) console.log(err.stack);
                         cb(); 
                     });
-                break;
-                case "listUsers": /* Comando: listUsers -q <query> -i <init> -c <count> */
-                    /* Mostramos la ayuda del comando con el parámetro --help */
-                    if(args.help != undefined){ console.log(messages.help.listUsers); cb(); break;  } 
-
-                    // Llama al método del Model para listar a los Usuarios.
-                    model.listUsers(token, args, (err, res) => {
-                        if(err) console.log(err);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
-                    })
                 break;
                 case "listFollowing": /* Comando: listFollowing -q <query> -i <init> -c <count> */
                     /* Mostramos la ayuda del comando con el parámetro --help */
@@ -214,13 +231,12 @@ function menu(args, cb) {
                         if(err) {
                             if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
                             else  console.log(err.message); // Esto maneja errores que no vienen del servidor
+                            cb();
                         }
                         else if(_token == undefined) cb();
                         else {
                             token = _token; user = _user;
-                            printWithLog((messages.cmd.login.success.replace("%nick%", _user.nick)), 
-                                (messages.log.user_join.replace("%nick%", _user.nick)
-                                .replace("%email%", _user.email)), 1);
+                            print((messages.cmd.login.success.replace("%nick%", _user.nick)), 1);
                             rl.setPrompt("\x1b[1m\x1b[33m"+user.nick + "\x1b[0m : "); 
                             console.log(messages.menu);
                             cb();
@@ -236,26 +252,23 @@ function menu(args, cb) {
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
                     
-                    /* Comprobación de los parámetros. Revisa si existen y no son undefined 
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
                     if(!args.n || (typeof args.n !== 'string' || args.n.trim() === '')){ print(messages.cmd.addUser.no_name, 0); cb(); break; }
                     else if(!args.s || (typeof args.s !== 'string' || args.s.trim() === '')){ print(messages.cmd.addUser.no_surname, 0); cb(); break; }
                     else if(!args.e || (typeof args.e !== 'string' || args.e.trim() === '')){ print(messages.cmd.addUser.no_email, 0); cb(); break; }
                     else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.addUser.no_password, 0); cb(); break; }
                     else if(!args.i || (typeof args.i !== 'string' || args.i.trim() === '')){ print(messages.cmd.addUser.no_nick, 0); cb(); break; }
-                    */
+                    
 
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i };
                     model.addUser(u, (err, res) => { /* Llamada a la función addUser() del Model */
                         /* Comprobación de si el método addUser devuelve un usuario o errores */
                         if(err) {
-                            if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
-                            else  console.log(err.message); // Esto maneja errores que no vienen del servidor                     
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error desde el servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor                     
                         }else {
-                            printWithLog(messages.cmd.addUser.success, (messages.log.new_user
-                                .replace("%name%", args.n).replace("%surname%", args.s)
-                                .replace("%email%", args.e).replace("%password%", args.p)
-                                .replace("%nick%", args.i)),1);
+                            print(messages.cmd.addUser.success , 1); // Imprime mensaje de usuario agregado.
                         }
                         cb();   
                     })

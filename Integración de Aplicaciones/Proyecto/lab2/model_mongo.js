@@ -138,8 +138,7 @@ function updateUser(token, user, cb){
     
     /* Si no se ha insertado ningún parámetro devolvemos error */
     if(!booleanUser.name && !booleanUser.surname && !booleanUser.email && !booleanUser.password && !booleanUser.nick){
-        print(messages.cmd.updateUser.no_param, 0);
-        cb(null); return;
+        cb(printErr(messages.cmd.updateUser.no_param, 0)); return;
     }
     MongoClient.connect(url).then((client) => {        
         /* Crear un nuevo callback llamado _cb que hace lo mismo */
@@ -154,14 +153,14 @@ function updateUser(token, user, cb){
         // Si nos pidieron actualizar el parámetro Email.
         if(booleanUser.email){ /* Hay que realizar una búsqueda en la base de datos por si coincide con algún email de usuario ya registrado. */
             users.findOne({ email: user.email }).then((j) => {                        
-                if(j){ print(messages.cmd.updateUser.email_exists,0); _cb(null); return; }               
+                if(j){ _cb(printErr(messages.cmd.updateUser.email_exists,0)); return; }               
             });    
         }
 
         // Si nos pidieron actualizar el parámetro nick.
         if(booleanUser.nick){ /* Hay que realizar una búsqueda en la base de datos por si coincide con algún nick de usuario ya registrado. */
             users.findOne({ nick: user.nick }).then((j) => {                        
-                if(j){ print(messages.cmd.updateUser.nick_exists,0); _cb(null); return; }              
+                if(j){ _cb(printErr(messages.cmd.updateUser.nick_exists,0)); return; }              
             });    
         }
         
@@ -170,20 +169,15 @@ function updateUser(token, user, cb){
         const consulta = {  _id: new mongodb.ObjectId(token)  };
         users.findOne(consulta).then((_user) => { 
             /* Si no existe devolvemos error y si existe actualizamos el usuario. */
-            if(!_user){ print(messages.cmd.err.no_token, 0); _cb(); return; }                         
-            if(booleanUser.name) _user.name = user.name;
-            if(booleanUser.surname) _user.surname = user.surname;
-            if(booleanUser.email) _user.email = user.email;
-            if(booleanUser.password) _user.password = user.password;
+            if(!_user){ _cb(printErr(messages.cmd.err.no_token, 0)); return; }                         
+            if(booleanUser.name) _user.name = user.name; if(booleanUser.surname) _user.surname = user.surname;
+            if(booleanUser.email) _user.email = user.email; if(booleanUser.password) _user.password = user.password;
             if(booleanUser.nick) _user.nick = user.nick;
 
             const update = { $set: { name: _user.name, surname: _user.surname, email: _user.email, password: _user.password, nick: _user.nick } };
             users.updateOne(consulta, update).then(result => { 
-                if(result){
-                    printWithLog(messages.cmd.updateUser.success, (messages.log.new_update
-                        .replace("%name%",_user.name).replace("%surname%",_user.surname)
-                        .replace("%email%",_user.email).replace("%nick%",_user.nick).replace("%password%",_user.password)), 1);            
-                    _cb(null, _user);
+                if(result){         
+                    _cb(null, _user); // Devuelve el usuario.
                 }else{
                     _cb(err) 
                 }                                           
@@ -223,7 +217,7 @@ function listUsers(token, opts, cb) {
         /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
         /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
         users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
-            if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; } /* Mensaje de error */
+            if (!_user) { _cb(printErr(messages.cmd.err.no_token, 0)); return; } /* Mensaje de error */
                  
             let jsonQuery = {}; /* Variable para almacenar la query */
                 if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
@@ -232,7 +226,7 @@ function listUsers(token, opts, cb) {
                     .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
                      
                     try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
-                    catch(err){ print(messages.cmd.listUsers.invalid_format, 0); _cb(null); return; } // Mensaje de inválid format JSON.              
+                    catch(err){ _cb(printErr(messages.cmd.listUsers.invalid_format, 0)); return; } // Mensaje de inválid format JSON.              
                  }  
 
                  let _query = jsonQuery; let _opts = {};
@@ -241,8 +235,7 @@ function listUsers(token, opts, cb) {
                  if (opts.s && typeof opts.s === 'string' && opts.s.trim() !== '') _opts.s = [[opts.s.slice(1),(opts.s.charAt(0) == '+' ? 1 : -1)]];
                  users.find(_query, _opts).toArray().then(_results => {
                     if(_results.length == 0){
-                        print(messages.cmd.listUsers.no_results, 2);
-                        _cb(null); return;
+                        _cb(printErr(messages.cmd.listUsers.no_results, 2)); return;
                     }
                      let results = _results.map((user) => {            
                          return {              
@@ -883,25 +876,6 @@ function dislike(token, tweetId, cb){
     }); 
 }
 
-/*
-/* Imprime un mensaje con colores más un Log al final 
-function printWithLog(message, logMessage, color){
-    print(message, color);
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
-}
-
-/* Imprime un mensaje con colores 
-function print(message, color){
-    switch(color){
-        case 0: console.log('\x1b[31m[Error]\x1b[0m ' + message);
-        break;
-        case 1: console.log('\x1b[32m[Éxito]\x1b[0m ' + message);
-        break;
-        case 2: console.log('\x1b[34m[Info]\x1b[0m ' + message);
-        break;
-    }
-}*/
-
 /* Imprime un mensaje con colores más un Log al final */
 function ErrWithLog(message, logMessage, color){
     let newMSG = "";
@@ -914,7 +888,11 @@ function ErrWithLog(message, logMessage, color){
         break;
     }
     console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
-    return new Error(newMSG);
+    return new Error(newMSG)
+}
+
+function sendLog(message) {
+    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+message+'\x1b[0m');
 }
 
 function printErr(message, color){
@@ -926,8 +904,10 @@ function printErr(message, color){
         break;
         case 2: newMSG = '\x1b[34m[Info]\x1b[0m ' + message;
         break;
+        case 3: newMSG = message;
+        break;
     }
-    return new Error(newMSG);
+    return new Error(newMSG)
 }
 
 
@@ -945,4 +925,8 @@ module.exports = {
     listTweets,
     like,
     dislike,
+
+    printErr,
+    ErrWithLog,
+    sendLog
 }

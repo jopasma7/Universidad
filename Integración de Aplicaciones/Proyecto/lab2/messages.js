@@ -42,7 +42,7 @@ cmd = {
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
     email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado. Por favor elige otro diferente.",
     nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado. Por favor elige otro diferente.",
-    success : ">> Has actualizado tus datos de usuario.",
+    success : ">> Has actualizado los datos de tu usuario \x1b[33m%nick%\x1b[0m.",
   },
   listUsers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistUsers --help\x1b[0m para más información.",
