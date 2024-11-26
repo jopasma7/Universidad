@@ -552,7 +552,7 @@ function addTweet(token, content, cb){
             if (!_user) { print(messages.cmd.err.no_token, 0); _cb(null); return; }
             
             /* Creación de Tweet : Estructura */
-            console.log(content);
+            //console.log(content);
             let contentMsg = content.replace(/'/g, '');
             let tweet = {
                 owner : {

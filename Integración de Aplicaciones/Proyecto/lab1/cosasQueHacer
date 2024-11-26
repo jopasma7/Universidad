@@ -13,7 +13,7 @@ ADDRETWEET : El usuario autenticado reteetea otro tweet El callback recibe el re
 
 COSAS QUE TIENE :
 A NIVEL PROGRAMACIÓN:
-- Posibilidad de 'exit' desde cada menú.
+- Posibilidad de 'exit' de la aplicación desde el menú.
 - Solucionados problemas con los espacios haciendo un match en vez de split (Minimist).
 - Posibilidad de ver ayuda para CADA comando con la opción --help bien explicado y detallado.
 - Revisados con paciencia los errores de cada comando y controlados con su própio mensaje identificativo.
@@ -28,6 +28,7 @@ A NIVEL PROGRAMACIÓN:
 - Revisiones en Like y Dislike para no darse a uno mismo o repetir acciones.
 - Autocompletado de los comandos y comandos recomendados.
 - Parches en la comprobación de los parámetros de minimist, poner dos veces lo mismo creaba un array y provocaba errores.
+- Posibilidad de salir de la app con el comando logout (incluso cerrando la sesión del usuario).
 
 A NIVEL VISUAL:
 - Diseño elegante.
