@@ -117,7 +117,11 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar a los Followings.
                     model.listFollowing(token, args, (err, res) => {
-                        if(err) console.log(err);
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
+                            else  console.log(err.message); // Esto maneja errores que no vienen del servidor
+                            cb();
+                        }
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })

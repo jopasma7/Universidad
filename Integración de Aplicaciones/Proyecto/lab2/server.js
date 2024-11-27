@@ -58,7 +58,7 @@ app.post('/twitter/sessions', function (req, res) {
 
   // Endpoint para actualizar un usuario
 app.put('/twitter/users/:id', (req, res) => {
-  const id = req.params.id; // Obtiene el username del parámetro de la ruta
+  const id = req.params.id; // Obtiene el token/id del parámetro de la ruta
   const newDataUser = req.body; // Obtiene los datos del usuario desde el cuerpo de la solicitud
   const token = req.query.token; // Obtiene el token de la query
 
@@ -91,6 +91,7 @@ app.get('/twitter/users', function (req, res) {
     model.listUsers(req.query.token, opts, (err, users) => {
       if (err) {
         //console.log(err.message);
+        sendLog(`El usuario con ID <${req.query.token}> ha ejecutado el comando listUsers()`);
         res.status(400).send(err.message);
       } else {
         res.send(users);
@@ -99,12 +100,9 @@ app.get('/twitter/users', function (req, res) {
 });
 
 
-
-
-
 // listFollowing
 app.get('/twitter/users/:me/following', function (req, res) {
-    console.log('list following  ' + JSON.stringify(req.query));
+    //console.log('list following  ' + JSON.stringify(req.query));
     if (req.query.token != req.params.me) 
       res.status(400).send('Forbidden operation');
     else {
@@ -112,8 +110,9 @@ app.get('/twitter/users/:me/following', function (req, res) {
       if (req.query.opts) opts = JSON.parse(req.query.opts);
       model.listFollowing(req.query.token, opts, (err, users) => {
         if (err) {
-          console.log(err.stack);
-          res.status(400).send(err);
+          //console.log(err.message);
+          sendLog(`El usuario con ID <${req.query.token}> ha ejecutado el comando listFollowing()`);
+          res.status(400).send(err.message);
         } else {
           res.send(users);
         }
