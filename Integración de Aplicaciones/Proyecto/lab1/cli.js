@@ -45,10 +45,14 @@ function menu(args, cb) {
                     /* Crea el usuario <u> con lo valores proporcionados en el comando */
                     let u = { name: args.n, surname: args.s, email: args.e, password: args.p, nick: args.i }; 
                    
-                    model.updateUser(token, u, (err, u) =>{ /* Llama a la función updateUser() del Model */
-                        if(u != undefined) {
-                            if(user.nick != u.nick) rl.setPrompt("\x1b[1m\x1b[33m"+u.nick + "\x1b[0m : "); // Cambiamos el Prompt.
-                            user = u; // Reajustamos el usuario.
+                    model.updateUser(token, u, (err, res) =>{ /* Llama a la función updateUser() del Model */
+                        if(err) console.log(err.message);
+                        else{
+                            if(res != undefined) {
+                                print(messages.cmd.updateUser.success, 1); 
+                                if(user.nick != res.nick) rl.setPrompt("\x1b[1m\x1b[33m"+res.nick + "\x1b[0m : "); // Cambiamos el Prompt.
+                                user = res; // Reajustamos el usuario.
+                            }
                         }                     
                         cb();                  
                     })
@@ -63,8 +67,10 @@ function menu(args, cb) {
                     if(args.id.length !== 24){ print(messages.cmd.follow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model.follow(token, args.id, (err) =>{
-                        if(err) console.log(err.stack);
+                    model.follow(token, args.id, (err,res) =>{
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.follow.success.replace("%nick%",res.nick), 1);
+                        
                         cb(); 
                     });
                 break;
@@ -78,8 +84,9 @@ function menu(args, cb) {
                     if(args.id.length !== 24){ print(messages.cmd.unfollow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model.unfollow(token, args.id, (err) =>{
-                        if(err) console.log(err.stack);
+                    model.unfollow(token, args.id, (err, res) =>{
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.unfollow.success.replace("%nick%",res.nick), 1);
                         cb(); 
                     });
                 break;
@@ -89,7 +96,7 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar a los Usuarios.
                     model.listUsers(token, args, (err, res) => {
-                        if(err) console.log(err);
+                        if(err) console.log(err.message);
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })
@@ -100,7 +107,7 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar a los Followings.
                     model.listFollowing(token, args, (err, res) => {
-                        if(err) console.log(err);
+                        if(err) console.log(err.message);
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })
@@ -111,7 +118,7 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar a los Followers.
                     model.listFollowers(token, args, (err, res) => {
-                        if(err) console.log(err);
+                        if(err) console.log(err.message);
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })  
@@ -126,11 +133,8 @@ function menu(args, cb) {
 
                     // Llama al método del Model para añadir el Tweet.
                     model.addTweet(token, args.c, (err, res) => {
-                        if(err) console.log(err);
-                        else {
-                            printWithLog(messages.cmd.addTweet.success, (messages.log.new_tweet
-                                .replace("%content%", res.content).replace("%nick%", user.nick)),1);
-                        }
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.addTweet.success, 1);
                         cb();
                     })  
                 break;
@@ -143,8 +147,9 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.addRetweet.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.addRetweet(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model.addRetweet(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.addRetweet.success.replace("%nick%",tw.owner.nick), 1);
                         cb();
                     })  
                 break;
@@ -154,7 +159,7 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar los Tweets.
                     model.listTweets(token, args, (err, res) => {
-                        if(err) console.log(err);
+                        if(err) console.log(err.message);
                         else if(res == undefined) cb();
                         else { console.table(res); cb(); }
                     })  
@@ -168,8 +173,9 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.like.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.like(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model.like(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.like.success.replace("%nick%",tw.owner.nick), 1);
                         cb();
                     })  
                 break;
@@ -182,12 +188,13 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.dislike.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.dislike(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model.dislike(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        print(messages.cmd.dislike.success.replace("%nick%",tw.owner.nick) ,1);
                         cb();
                     })  
                 break;
-                case "exit":
+                case "logout":
                     if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));
                     else console.log(messages.cmd.exit.not_logged);
                     user = undefined; token = undefined;
@@ -211,13 +218,11 @@ function menu(args, cb) {
                     else if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')){ print(messages.cmd.login.no_password, 0); cb(); break; }
      
                     model.login(args.e, args.p, (err, _token, _user) => { /* Llama al método login del Model */
-                        if(err) console.log(err);
+                        if(err) console.log(err.message);
                         else if(_token == undefined) cb();
                         else {
                             token = _token; user = _user;
-                            printWithLog((messages.cmd.login.success.replace("%nick%", _user.nick)), 
-                                (messages.log.user_join.replace("%nick%", _user.nick)
-                                .replace("%email%", _user.email)), 1);
+                            print((messages.cmd.login.success.replace("%nick%", _user.nick)), 1);
                             rl.setPrompt("\x1b[1m\x1b[33m"+user.nick + "\x1b[0m : "); 
                             console.log(messages.menu);
                             cb();
@@ -246,14 +251,9 @@ function menu(args, cb) {
                     model.addUser(u, (err, u) =>{ /* Llamada a la función addUser() del Model */
                         /* Comprobación de si el método addUser devuelve un usuario undefined */
                         /* En caso de devolverlo es porque ya existe el usuario en la base de datos y devuelve error */
-                        if(u != undefined) {
-                            if(err) console.log(err);
-                            else {
-                                printWithLog(messages.cmd.addUser.success, (messages.log.new_user
-                                    .replace("%name%", args.n).replace("%surname%", args.s)
-                                    .replace("%email%", args.e).replace("%password%", args.p)
-                                    .replace("%nick%", args.i)),1);
-                            }
+                        if(err) console.log(err.message);
+                        else{
+                            if(u != undefined) print(messages.cmd.addUser.success, 1);
                         }
                         cb();   
                     })
@@ -265,11 +265,6 @@ function menu(args, cb) {
         }
             
     } 
-}
-
-function printWithLog(message, logMessage, color){
-    print(message, color);
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
 }
 
 function print(message, color){

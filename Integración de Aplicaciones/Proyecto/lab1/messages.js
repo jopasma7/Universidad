@@ -49,11 +49,11 @@ cmd = {
   },
   listFollowing : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowing --help\x1b[0m para más información.",
-    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿Nadie te sigue? o ¿Búsqueda demasiado intensiva?",
+    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿No sigues a nadie? o ¿Búsqueda demasiado intensiva?",
   },
   listFollowers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistFollowers --help\x1b[0m para más información.",
-    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿No sigues a nadie? o ¿Búsqueda demasiado intensiva?",
+    no_results : ">> La búsqueda realizada no ha devuelto ningún resultado. ¿Nadie te sigue? o ¿Búsqueda demasiado intensiva?",
   },
   follow : {
     no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
@@ -103,6 +103,7 @@ cmd = {
   },
   err : {
     no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
+    unknown : ">> Se ha producido un error inesperado."
   },
   exit : {
     logged : "\x1b[34m>> ¿Ya te marchas \x1b[33m%nick%\x1b[0m\x1b[34m? ¡Te veo más tarde!\x1b[0m",
@@ -137,7 +138,7 @@ menu =
 \x1b[33m10.\x1b[0m \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                  
 \x1b[33m11.\x1b[0m \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                    
 
-\x1b[33m12.\x1b[0m \x1b[32mexit\x1b[0m
+\x1b[33m12.\x1b[0m \x1b[32mlogout\x1b[0m
 
 Para más información acerca de un comando
 Haz uso de \x1b[33m<cmd> --help\x1b[0m
