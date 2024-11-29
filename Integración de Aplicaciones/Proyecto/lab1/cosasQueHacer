@@ -11,6 +11,9 @@ ADDRETWEET : El usuario autenticado reteetea otro tweet El callback recibe el re
 - todo...
 
 
+PEQUEÑO PROBLEMA DEL CB EN ADDTWEET ERA? O ALGUNO DE ESOS.
+
+
 COSAS QUE TIENE :
 A NIVEL PROGRAMACIÓN:
 - Posibilidad de 'exit' de la aplicación desde el menú.
