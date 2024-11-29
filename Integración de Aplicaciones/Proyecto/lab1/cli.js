@@ -70,7 +70,6 @@ function menu(args, cb) {
                     model.follow(token, args.id, (err,res) =>{
                         if(err) console.log(err.message);
                         else print(messages.cmd.follow.success.replace("%nick%",res.nick), 1);
-                        
                         cb(); 
                     });
                 break;
@@ -97,8 +96,8 @@ function menu(args, cb) {
                     // Llama al método del Model para listar a los Usuarios.
                     model.listUsers(token, args, (err, res) => {
                         if(err) console.log(err.message);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();
                     })
                 break;
                 case "listFollowing": /* Comando: listFollowing -q <query> -i <init> -c <count> */
@@ -108,8 +107,8 @@ function menu(args, cb) {
                     // Llama al método del Model para listar a los Followings.
                     model.listFollowing(token, args, (err, res) => {
                         if(err) console.log(err.message);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();    
                     })
                 break;
                 case "listFollowers": /* Comando: listFollowers -q <query> -i <init> -c <count> */
@@ -119,8 +118,8 @@ function menu(args, cb) {
                     // Llama al método del Model para listar a los Followers.
                     model.listFollowers(token, args, (err, res) => {
                         if(err) console.log(err.message);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();
                     })  
                 break;
                 case "addTweet": /* Comando: addTweet -c <content> */
@@ -160,8 +159,8 @@ function menu(args, cb) {
                     // Llama al método del Model para listar los Tweets.
                     model.listTweets(token, args, (err, res) => {
                         if(err) console.log(err.message);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();
                     })  
                 break;
                 case "like": /* Comando: like --id <tweetID> */
@@ -205,8 +204,7 @@ function menu(args, cb) {
                 default: /* Muestra el menú principal de ayuda */
                     console.log(messages.menu);
                     cb();
-            }
-        
+            }    
         }else{ /* Lista de comandos que podremos ejecutar sin Token. Menú de Login */
             switch (args._[0]) {           
                 case "login": /* Comando: login -e <email> -p <password> */                   
@@ -219,14 +217,14 @@ function menu(args, cb) {
      
                     model.login(args.e, args.p, (err, _token, _user) => { /* Llama al método login del Model */
                         if(err) console.log(err.message);
-                        else if(_token == undefined) cb();
                         else {
                             token = _token; user = _user;
                             print((messages.cmd.login.success.replace("%nick%", _user.nick)), 1);
                             rl.setPrompt("\x1b[1m\x1b[33m"+user.nick + "\x1b[0m : "); 
                             console.log(messages.menu);
-                            cb();
+                            
                         }
+                        cb();
                     })
 
                 break;    
