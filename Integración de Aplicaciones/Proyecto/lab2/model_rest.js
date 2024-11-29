@@ -1,7 +1,7 @@
 const axios = require("axios");
 const url = 'http://localhost:8080/twitter';
 const messages = require("./messages"); 
-const { printErr, ErrWithLog, sendLog } = require('./model_mongo');
+const { printErr, logger } = require('./model_mongo');
 
 /*======================================================*/
 /*                  USUARIOS >> LOGIN                   */
@@ -135,7 +135,16 @@ function listFollowing(token, opts, cb) {
 /*        la lista de usuarios que hemos listado        */
 
 function listFollowers(token, opts, cb) {  
-
+    axios.get(url + '/users/' + token + '/followers',
+        {
+            params: { token: token, opts: JSON.stringify(opts) }
+        })
+        .then(res => {
+            cb(null, res.data)
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 /*======================================================*/
@@ -171,8 +180,21 @@ function unfollow(token, userId, cb){
 /*    Contiene el contendo del mensaje en <content>     */
 /*          Devuelve un <cb> con el resultado.          */
 
-function addTweet(token, content, cb){
-
+function addTweet(token, content, cb) {  
+    // Comprobación de los parámetros. Si falta alguno imprime error en cliente y servidor (Log)
+    if (!content) cb(printErr(messages.cmd.addTweet.no_content, 0));
+    else {
+        axios.post(url + '/tweets', 
+            { content: content }, 
+            { params: { token: token } }
+        )
+        .then(res => {
+            cb(null, res.data);
+        })
+        .catch(err => {
+            cb(err);
+        });
+    }
 }
 
 /*======================================================*/

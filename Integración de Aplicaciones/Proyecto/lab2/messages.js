@@ -14,7 +14,8 @@ log = {
     new_unfollow : "Se ha eliminado el follow del usuario con <nick>:%user_nick% para el usuario con <nick>:%target_nick%.",
     new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
-    new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <nick>:%nick% y con el contenido: %content%.",
+    new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <userID>:%userID% y con el contenido: %content%.",
+    new_delete : "Usuario con <ID>:%userID% eliminado. Eliminados: Tweets(%tweetsDeleted%), retweets(%retweets%), likes(%likes%), dislikes(%dislikes%), Followers(%followersUpdate%), Followings(%followingsUpdate%)",
     new_retweet : "Se ha registrado un nuevo retweet enviado por el usuario con <nick>:%nick_retweet% del tweet con id: %tweetID%, owner: %owner_nick% y contenido: %content%.",
     new_like : "Se ha registrado un nuevo like del usuario: %user_liked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
     new_dislike : "Se ha registrado un nuevo dislike del usuario: %user_disliked% al tweet con id: %tweetID% creado por: %owner_nick% y con el contenido: %content%.",
@@ -43,6 +44,14 @@ cmd = {
     email_exists : ">> Ya existe un usuario en nuestra base de datos ese email registrado. Por favor elige otro diferente.",
     nick_exists : ">> Ya existe un usuario en nuestra base de datos con ese nick registrado. Por favor elige otro diferente.",
     success : ">> Has actualizado los datos de tu usuario \x1b[33m%nick%\x1b[0m.",
+  },
+  deleteUser : {
+    no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mdeleteUser\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_length : ">> El valor del ID debe contener exactamente 24 dígitos. \x1b[33mComando\x1b[0m: \x1b[32mdeleteUser\x1b[0m --id \x1b[32m<userID>\x1b[0m",
+    no_exists : ">> El usuario con ID = %userID% no existe en la base de datos.",
+    error : ">> Un error inesperado ha producido que no se pueda eliminar al usuario en estos momentos...",
+    success : ">> Has eliminado de la base de datos del sistema al usuario con <id> : %userID%",
+    success_own : ">> Has eliminado de la base de datos tu propio usuario...",
   },
   listUsers : {
     invalid_format : ">> Error en la conversión a JSON. Utiliza \x1b[33mlistUsers --help\x1b[0m para más información.",
@@ -347,7 +356,7 @@ help = {
 
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,
-    like : 
+    dislike : 
 `
 =======================================================================
                       MENÚ DE AYUDA : DISLIKE
@@ -361,6 +370,22 @@ help = {
    - Solamente se podrá dar Dislike una vez al mismo Tweet.
    - No se podrá dar dislike a un tweet publicado por el propio usuario.
    - En caso de haber dado Dislike a algún Tweet, se eliminará el Like en caso de existir.
+
+ NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
+`,
+    delete : 
+`
+=======================================================================
+                     MENÚ DE AYUDA : DELETEUSER
+=======================================================================
+ • \x1b[33mDescripción\x1b[0m: Elimina al usuario de la base de datos.  
+ • \x1b[33mUso\x1b[0m: \x1b[32mdeleteUser\x1b[0m --id \x1b[32m<userID>\x1b[0m.
+ • \x1b[33mVariables\x1b[0m:
+    |--id| : <userID>    ->  ID del Usuario al que se quiere eliminar.
+
+ • \x1b[33mEspecificaciones\x1b[0m: 
+   - Si te eliminas el usuario propio se te desconectará de la sesión.
+   - Eliminar a un usuario equivale a eliminar toda la información de Tweets / Follows y Likes.
 
  NOTA: \x1b[90mLa ejecución del comando solamente estará disponible una vez autenticado.\x1b[0m
 `,

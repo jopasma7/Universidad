@@ -2,9 +2,10 @@ const readline = require("readline");
 const minimist = require("minimist"); 
 const model = require("./model_rest"); 
 const messages = require("./messages"); 
+const model_mongo = require("./model_mongo");
 
 // Lista de comandos para autocompletar
-const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'listFollowing', 'listFollowers', 
+const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'deleteUser', 'listFollowing', 'listFollowers', 
     'follow', 'unfollow', 'addTweet', 'addRetweet', 'listTweets', 'like', 'dislike'];
 
 const rl = readline.createInterface({    
@@ -57,13 +58,12 @@ function menu(args, cb) {
                             if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
                             else  console.log(err.message); // Errores que no vienen del servidor
                             cb();
-                        }
-                        if(res != undefined) {
+                        }else{
                             print((messages.cmd.updateUser.success.replace("%nick%", res.nick)), 1);
                             if(user.nick != res.nick) rl.setPrompt("\x1b[1m\x1b[33m"+res.nick + "\x1b[0m : "); // Cambiamos el Prompt.
                             user = res; // Reajustamos el usuario.
-                            cb(); 
-                        }                                     
+                            cb();
+                        }                                    
                     })
                 break;
                 case "listUsers": /* Comando: listUsers -q <query> -i <init> -c <count> */
@@ -71,15 +71,42 @@ function menu(args, cb) {
                     if(args.help != undefined){ console.log(messages.help.listUsers); cb(); break;  } 
 
                     // Llama al método del Model para listar a los Usuarios.
-                    model.listUsers(token, args, (err, res) => {
+                    model_mongo.listUsers(token, args, (err, res) => {
                         if(err) {
                             if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
                             else  console.log(err.message); // Errores que no vienen del servidor
-                            cb();
                         }
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();
                     })
+                break;
+                case "deleteUser": /* Comando: deleteUser --id <userID> */
+                     /* Mostramos la ayuda del comando con el parámetro --help */
+                     if(args.help != undefined){ console.log(messages.help.delete); cb(); break;  } 
+
+                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
+                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  
+                        print(messages.cmd.deleteUser.no_id, 0); cb(); break;  
+                    }
+                    /* Comprobar también si el ID introducido tiene 24 números */
+                    if(args.id.length !== 24){ print(messages.cmd.deleteUser.no_length, 0); cb(); break;   }
+
+                    /* Tenemos los parámetros correctamente entonces le pasamos el método */
+                    model_mongo.deleteUser(token, args.id, (err,res) =>{
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
+                        }
+                        else {
+                            if(token == res){
+                                print(messages.cmd.deleteUser.success_own, 1);
+                                user = undefined; token = undefined;
+                                rl.setPrompt(messages.prompt); 
+                                console.log(messages.login_menu);
+                            }else print(messages.cmd.deleteUser.success.replace("%userID%", res), 1);
+                        }
+                        cb(); 
+                    });
                 break;
                 case "follow": /* Comando: follow -id <userID> */
                      /* Mostramos la ayuda del comando con el parámetro --help */
@@ -91,8 +118,9 @@ function menu(args, cb) {
                     if(args.id.length !== 24){ print(messages.cmd.follow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model.follow(token, args.id, (err) =>{
-                        if(err) console.log(err.stack);
+                    model_mongo.follow(token, args.id, (err,res) =>{
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.follow.success.replace("%nick%",res.nick), 1);
                         cb(); 
                     });
                 break;
@@ -106,8 +134,9 @@ function menu(args, cb) {
                     if(args.id.length !== 24){ print(messages.cmd.unfollow.no_length, 0); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model.unfollow(token, args.id, (err) =>{
-                        if(err) console.log(err.stack);
+                    model.unfollow(token, args.id, (err, res) =>{
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.unfollow.success.replace("%nick%",res.nick), 1);
                         cb(); 
                     });
                 break;
@@ -118,12 +147,11 @@ function menu(args, cb) {
                     // Llama al método del Model para listar a los Followings.
                     model.listFollowing(token, args, (err, res) => {
                         if(err) {
-                            if (err.response && err.response.data) console.log(err.response.data); // Aquí se imprime únicamente el mensaje de error del servidor
-                            else  console.log(err.message); // Esto maneja errores que no vienen del servidor
-                            cb();
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
                         }
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        else console.table(res);
+                        cb();
                     })
                 break;
                 case "listFollowers": /* Comando: listFollowers -q <query> -i <init> -c <count> */
@@ -132,9 +160,12 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar a los Followers.
                     model.listFollowers(token, args, (err, res) => {
-                        if(err) console.log(err);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
+                        }
+                        else console.table(res);
+                        cb();
                     })  
                 break;
                 case "addTweet": /* Comando: addTweet -c <content> */
@@ -147,11 +178,11 @@ function menu(args, cb) {
 
                     // Llama al método del Model para añadir el Tweet.
                     model.addTweet(token, args.c, (err, res) => {
-                        if(err) console.log(err);
-                        else {
-                            printWithLog(messages.cmd.addTweet.success, (messages.log.new_tweet
-                                .replace("%content%", res.content).replace("%nick%", user.nick)),1);
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
                         }
+                        else print(messages.cmd.addTweet.success, 1);
                         cb();
                     })  
                 break;
@@ -164,8 +195,9 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.addRetweet.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.addRetweet(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model_mongo.addRetweet(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.addRetweet.success.replace("%nick%",tw.owner.nick), 1);
                         cb();
                     })  
                 break;
@@ -175,9 +207,12 @@ function menu(args, cb) {
 
                     // Llama al método del Model para listar los Tweets.
                     model.listTweets(token, args, (err, res) => {
-                        if(err) console.log(err);
-                        else if(res == undefined) cb();
-                        else { console.table(res); cb(); }
+                        if(err) {
+                            if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error del servidor
+                            else  console.log(err.message); // Errores que no vienen del servidor
+                        }
+                        else console.table(res);
+                        cb();
                     })  
                 break;
                 case "like": /* Comando: like --id <tweetID> */
@@ -189,8 +224,9 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.like.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.like(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model_mongo.like(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        else print(messages.cmd.like.success.replace("%nick%",tw.owner.nick), 1);
                         cb();
                     })  
                 break;
@@ -203,25 +239,27 @@ function menu(args, cb) {
                     /* Comprobar también si el ID introducido tiene 24 números */
                     if(args.id.length !== 24){ print(messages.cmd.dislike.no_length, 0); cb(); break;   }
                     // Llama al método del Model.
-                    model.dislike(token, args.id, (err) => {
-                        if(err) console.log(err.stack);
+                    model_mongo.dislike(token, args.id, (err, tw) => {
+                        if(err) console.log(err.message);
+                        print(messages.cmd.dislike.success.replace("%nick%",tw.owner.nick) ,1);
                         cb();
                     })  
                 break;
-                case "exit":
+                case "logout":
                     if(user) console.log(messages.cmd.exit.logged.replace("%nick%",user.nick));
                     else console.log(messages.cmd.exit.not_logged);
                     user = undefined; token = undefined;
                     rl.setPrompt(messages.prompt); 
                     console.log(messages.login_menu);
                     cb();
-                    break;  
+                    break; 
                 default: /* Muestra el menú principal de ayuda */
                     console.log(messages.menu);
                     cb();
             }
         
         }else{ /* Lista de comandos que podremos ejecutar sin Token. Menú de Login */
+            if(rl.prompt != messages.prompt) rl.setPrompt(messages.prompt); 
             switch (args._[0]) {           
                 case "login": /* Comando: login -e <email> -p <password> */                   
                     /* Mostramos la ayuda del comando con el parámetro --help */
@@ -237,7 +275,6 @@ function menu(args, cb) {
                             else  console.log(err.message); // Esto maneja errores que no vienen del servidor
                             cb();
                         }
-                        else if(_token == undefined) cb();
                         else {
                             token = _token; user = _user;
                             print((messages.cmd.login.success.replace("%nick%", _user.nick)), 1);
@@ -271,9 +308,7 @@ function menu(args, cb) {
                         if(err) {
                             if (err.response && err.response.data) console.log(err.response.data); // Mensaje de error desde el servidor
                             else  console.log(err.message); // Errores que no vienen del servidor                     
-                        }else {
-                            print(messages.cmd.addUser.success , 1); // Imprime mensaje de usuario agregado.
-                        }
+                        }else print(messages.cmd.addUser.success , 1); // Imprime mensaje de usuario agregado.
                         cb();   
                     })
                 break;
@@ -284,11 +319,6 @@ function menu(args, cb) {
         }
             
     } 
-}
-
-function printWithLog(message, logMessage, color){
-    print(message, color);
-    console.log('\x1b[90m%s\x1b[0m','[LOG] \x1b[3m'+logMessage+'\x1b[0m');
 }
 
 function print(message, color){
