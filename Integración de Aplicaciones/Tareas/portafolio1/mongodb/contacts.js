@@ -1,15 +1,51 @@
 const MongoClient = require('mongodb').MongoClient;
-const readline = require('readline');
+const readline = require("readline"); 
+const minimist = require("minimist"); 
+const figlet = require('figlet');
 
-// Crear la interfaz de readline
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+// Lista de comandos para autocompletar
+const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'listFollowing', 'listFollowers', 
+    'follow', 'unfollow', 'addTweet', 'addRetweet', 'listTweets', 'like', 'dislike'];
+
+const colors = {
+  blue: '\x1b[34m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  white: '\x1b[37m',
+  gray: '\x1b[90m',
+  bold: '\x1b[1m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  cursiva: '\x1b[3m',
+  reset: '\x1b[0m'
+};
+
+let name = "";
+
+const rl = readline.createInterface({    
+    input: process.stdin,    
+    output: process.stdout,
+    completer: (line) => {
+        // Filtrar comandos que comienzan con el texto ingresado
+        const hits = commands.filter((cmd) => cmd.startsWith(line));
+        
+        // Mostrar todas las opciones si no hay coincidencia exacta
+        return [hits.length ? hits : commands, line];
+      }
+}); 
 
 const lang = {
-    welcome : '> Bienvenido al Programa. Por favor, ingresa tu nombre: ',
-    answer : `> Hola, %username%! ¿Qué vamos a hacer hoy?`,
+    prompt : colors.green + colors.bold + "Contacts : " + colors.reset,
+    answer : colors.bold + colors.cyan + `🎉 ¡Bienvenido al programa de Contactos! ¿Cómo te llamas? : ` + colors.reset,
+    welcome : `\n📚 ¿Qué tal ${colors.yellow}${colors.bold}%name%${colors.reset}? ¡Vamos a ponernos al día! 📚\n` + colors.reset + 
+    `⏳ Serás redirigido al menú principal en: ${colors.yellow}${colors.bold}%seconds%${colors.reset} segundos...` + colors.reset,
+    countdown_high : `⏰ Quedan ${colors.yellow}${colors.bold}%seconds%${colors.reset} segundos...`,
+    countdown_low : `⏳ ¡Ya casi! Solo quedan ${colors.red}${colors.bold}%seconds%${colors.reset} segundos...`,
+    redirect : colors.yellow + colors.bold + `\n🚀 Redirigiendo al menú principal...\n` + colors.reset,
+    
+    
+    
     invalid_action : "\n> Acción no válida. Revisa las posibles opciones.\n",
     return : "\nRegresando al menú principal de comandos...\n",
     log : {
@@ -30,19 +66,80 @@ const lang = {
         },
         remove : '(REMOVE) : Introduce el email del usuario que quieres eliminar: ',
         exit : '(EXIT) : Saliendo del programa. Nos vemos pronto %username%.',
-        main : 
-`----------------------------------------------------
-    >> Menú Principal:
-----------------------------------------------------
-    - ADD : Añadir un nuevo contacto.
-    - LIST : Listar todos los contactos.
-    - UPDATE : Actualizar algún contacto.
-    - REMOVE : Eliminar un contacto.
-    - EXIT : Salir del programa.
-----------------------------------------------------`,
+        
     },
+    main_menu : figlet.textSync('Menú Principal', { horizontalLayout: 'full' }) + colors.reset +
+        '\n\n' +
+        colors.green + '    === Comandos Disponibles ===' + colors.reset + '\n' +
+        '\n' +
+        colors.yellow + '    [1] ADD     : ' + colors.white + 'Añadir un nuevo contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [2] LIST    : ' + colors.white + 'Listar todos los contactos.' + colors.reset + '\n' +
+        colors.yellow + '    [3] UPDATE  : ' + colors.white + 'Actualizar algún contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [4] REMOVE  : ' + colors.white + 'Eliminar un contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [5] EXIT    : ' + colors.white + 'Salir del programa.' + colors.reset + '\n',
     err : `Error: %error%`        
 }
+
+
+// Inicia el programa y manda un Titulo de Contactos y una mensaje. Luego inicia Countdown.
+console.log(figlet.textSync('Contactos', { font: 'Big', horizontalLayout: 'full' }));
+rl.question(lang.answer, (res) => {
+    name = res;
+    rl.close();
+    countdown(5);
+});
+
+// Llama a uno función que hace una cuenta atrás y luego imprime el menú de comandos.
+function countdown(seconds) {
+    console.log(lang.welcome.replace("%seconds%",seconds).replace("%name%",name));
+    
+    const interval = setInterval(() => {
+        seconds--;
+        if (seconds > 3) console.log(lang.countdown_high.replace("%seconds%",seconds));
+        else if (seconds <= 3 && seconds > 0) console.log(lang.countdown_low.replace("%seconds%",seconds));
+        else {
+            console.log(lang.redirect); clearInterval(interval); // Detener el intervalo
+            rl.setPrompt(lang.prompt);  console.log(lang.main_menu); rl.prompt(); 
+            rl.on("line", line => {   
+                if(line){
+                    let args = minimist(fields = line.match(/'[^']*'|\S+/g));
+                    menu(args, () => {        
+                        rl.prompt();    
+                    }); 
+                } else rl.prompt(); 
+            });
+      }
+    }, 1000); // Ejecutar cada 1000 ms (1 segundo)
+}
+
+function menu(args, cb) {    
+    if (!args._.length || args._[0] == "") cb();   
+    else {         
+        switch ((args._[0]).toLowerCase()) { 
+            case "add":
+                console.log("add");
+
+                addContact(title, email,(err) => {
+                    if(err) console.log(lang.err.replace("%error%",err.message));
+                    else console.log(lang.cmd.add.success);
+                    logMessage(lang.log.contactAdded.replace("%email%",email).replace("%title%",title));
+                    console.log(lang.return);
+                    menu();
+                });
+
+                cb();
+            break;
+            default:
+                console.log("menú");
+                cb();
+        }
+    }
+}
+
+
+
+
+
 
 
 
@@ -51,19 +148,13 @@ function logMessage(message){
 }
 
 // Main Menú ; Envía todos los comandos y acciones disponibles.
-function menu(){
+function menuu(){
     rl.question(lang.cmd.main+"\n> Acción: ", (action) => {
         switch(action.toUpperCase()){
             case `ADD`:
                 rl.question(lang.cmd.add.email, (email) => {
                     rl.question(lang.cmd.add.title, (title) => {                      
-                        addContact(title, email,(err) => {
-                            if(err) console.log(lang.err.replace("%error%",err.stack));
-                            else console.log(lang.cmd.add.success);
-                            logMessage(lang.log.contactAdded.replace("%email%",email).replace("%title%",title));
-                            console.log(lang.return);
-                            menu();
-                        });           
+                                   
                     });
                 }); 
                                
@@ -119,15 +210,6 @@ function menu(){
     }); 
 } 
 
-// Inicio del programa. Manda un welcome mensaje y activa el menú de comandos.
-
-var username = "";
-rl.question(lang.welcome, (nombre) => {
-    username = nombre;
-    console.log(lang.answer.replace("%username%", username));     
-    menu();
-    
-});
 
 /* Función para recoger todos los usuarios de la base de datos */
 function listContacts(query, cb){

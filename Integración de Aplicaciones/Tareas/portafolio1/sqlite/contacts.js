@@ -20,6 +20,7 @@ const lang = {
     err : `Error: %error%`        
 }
 
+console.log("Test");
 init(); // Inicializa la base de datos.
 
 if (process.argv.length <= 2) help();
