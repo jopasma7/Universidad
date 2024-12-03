@@ -72,11 +72,11 @@ const lang = {
         '\n\n' +
         colors.green + '    === Comandos Disponibles ===' + colors.reset + '\n' +
         '\n' +
-        colors.yellow + '    [1] ADD     : ' + colors.white + 'Añadir un nuevo contacto.' + colors.reset + '\n' +
-        colors.yellow + '    [2] LIST    : ' + colors.white + 'Listar todos los contactos.' + colors.reset + '\n' +
-        colors.yellow + '    [3] UPDATE  : ' + colors.white + 'Actualizar algún contacto.' + colors.reset + '\n' +
-        colors.yellow + '    [4] REMOVE  : ' + colors.white + 'Eliminar un contacto.' + colors.reset + '\n' +
-        colors.yellow + '    [5] EXIT    : ' + colors.white + 'Salir del programa.' + colors.reset + '\n',
+        colors.yellow + '    [1] ADD <email> <title>        : ' + colors.white + 'Añadir un nuevo contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [2] LIST [query]               : ' + colors.white + 'Listar todos los contactos.' + colors.reset + '\n' +
+        colors.yellow + '    [3] UPDATE <email> <values>    : ' + colors.white + 'Actualizar algún contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [4] REMOVE <email>             : ' + colors.white + 'Eliminar un contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [5] EXIT                       : ' + colors.white + 'Salir del programa.' + colors.reset + '\n',
     err : `Error: %error%`        
 }
 
@@ -85,7 +85,6 @@ const lang = {
 console.log(figlet.textSync('Contactos', { font: 'Big', horizontalLayout: 'full' }));
 rl.question(lang.answer, (res) => {
     name = res;
-    rl.close();
     countdown(5);
 });
 
@@ -117,30 +116,34 @@ function menu(args, cb) {
     else {         
         switch ((args._[0]).toLowerCase()) { 
             case "add":
+                if(!args.e) { console.log("Error: No email"); cb(); return; }
+                if(!args.t) { console.log("Error: No email"); cb(); return; }
                 console.log("add");
 
-                addContact(title, email,(err) => {
+                addContact(args.t, args.e,(err) => {
                     if(err) console.log(lang.err.replace("%error%",err.message));
                     else console.log(lang.cmd.add.success);
-                    logMessage(lang.log.contactAdded.replace("%email%",email).replace("%title%",title));
-                    console.log(lang.return);
-                    menu();
+                    logMessage(lang.log.contactAdded.replace("%email%",args.e).replace("%title%",args.t));
                 });
 
                 cb();
             break;
+            case "list":
+                console.log("list");
+                let query = [];
+                if(args.q) query = args.q
+                listContacts(query, (err, contacts) => {
+                    if(err) console.log(lang.err.replace("%error%",err.message));
+                    else console.table(contacts);
+                    logMessage(lang.log.contactList.replace("%query%",query));
+                });  
+            break;
             default:
-                console.log("menú");
+                console.log(lang.main_menu);
                 cb();
         }
     }
 }
-
-
-
-
-
-
 
 
 function logMessage(message){
