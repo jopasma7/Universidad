@@ -37,7 +37,7 @@ app.post('/twitter/users', function (req, res) {
         .replace("%email%",user.email).replace("%password%",user.password).replace("%nick%",user.nick));
       }
     });
-  });
+});
 
 /*======================================================*/
 /*                  ENDPOINT >> LOGIN                   */
@@ -56,9 +56,7 @@ app.post('/twitter/sessions', function (req, res) {
         }
       });
     }
-  });
-
-
+});
 
 /*======================================================*/
 /*               ENDPOINT >> UPDATEUSER                 */
@@ -111,46 +109,146 @@ app.delete('/twitter/users/:id', function (req, res) {
 });
 
 
-
-
-
 /*======================================================*/
 /*             ENDPOINT >> LISTFOLLOWING                */
 /*======================================================*/
 app.get('/twitter/users/:me/following', function (req, res) {
-    //console.log('list following  ' + JSON.stringify(req.query));
-    if (req.query.token != req.params.me) 
-      res.status(400).send('Forbidden operation');
-    else {
-      let opts = {};
+  const me  = req.params.me;  // usuario en los parámetros de la ruta
+  const token = req.query.token; // Obtiene el token de la query
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  // Verifica que el Token sea igual que la ID.
+  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
+  else {
+    let opts = {};
+    if (req.query.opts) opts = JSON.parse(req.query.opts);
+    model.listFollowing(req.query.token, opts, (err, users) => {
+      if (err) {
+        res.status(400).send(err.message);
+      } else {
+        logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listFollowing()`);
+        res.send(users);
+      }
+    });
+  }
+
+});
+
+/*======================================================*/
+/*             ENDPOINT >> LISTFOLLOWERS                */
+/*======================================================*/
+app.get('/twitter/users/:me/followers', function (req, res) {
+  const me  = req.params.me;  // usuario en los parámetros de la ruta
+  const token = req.query.token; // Obtiene el token de la query
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  // Verifica que el Token sea igual que la ID.
+  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
+  else{
+    let opts = {};
+    if (req.query.opts) opts = JSON.parse(req.query.opts);
+    model.listFollowers(req.query.token, opts, (err, users) => {
+      if (err) {
+        res.status(400).send(err.message);
+      } else {
+        logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listFollowers()`);
+        res.send(users);
+      }
+    });
+  }
+});
+
+
+/*======================================================*/
+/*               ENDPOINT >> LISTUSERS                  */
+/*======================================================*/
+app.get('/twitter/users', function (req, res) {
+  const token = req.query.token; // Obtiene el token de la query
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  let opts = {};
       if (req.query.opts) opts = JSON.parse(req.query.opts);
-      model.listFollowing(req.query.token, opts, (err, users) => {
+      model.listUsers(req.query.token, opts, (err, users) => {
         if (err) {
-          //console.log(err.message);
-          logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listFollowing()`);
           res.status(400).send(err.message);
         } else {
+          logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listUsers()`);
           res.send(users);
         }
       });
-    }
 });
 
 /*======================================================*/
 /*               ENDPOINT >> LISTTWEETS                 */
 /*======================================================*/
 app.get('/twitter/tweets', function (req, res) {
-    console.log('list tweets  ' + JSON.stringify(req.query));
+  const me  = req.params.me;  // usuario en los parámetros de la ruta
+  const token = req.query.token; // Obtiene el token de la query
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  // Verifica que el Token sea igual que la ID.
+  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
+  else {
     let opts = {};
-    if (req.query.opts) opts = JSON.parse(req.query.opts);
-    model.listTweets(req.query.token, opts, (err, tweets) => {
-      if (err) {
-        console.log(err.stack);
-        res.status(400).send(err);
-      } else {
-        res.send(tweets);
-      }
-    });
+      if (req.query.opts) opts = JSON.parse(req.query.opts);
+      model.listTweets(req.query.token, opts, (err, tweets) => {
+        if (err) {
+          res.status(400).send(err.message);
+        } else {
+          logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listTweets()`);
+          res.send(tweets);
+        }
+      }); 
+  } 
+});
+
+
+/*======================================================*/
+/*                ENDPOINT >> FOLLOW                    */
+/*======================================================*/
+app.post('/twitter/users/:me/following', function (req, res) {
+  const me  = req.params.me;  // usuario en los parámetros de la ruta
+  const token = req.query.token; // Obtiene el token de la query
+  const idUser = req.body.id;
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  // Verifica que el Token sea igual que la ID.
+  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
+  model.follow(token, idUser, (err, user) => {
+    if (err) {
+      res.status(400).send(err.message);
+    } else {
+      res.send(user); // Devuelve el usuario.
+
+      // Envía mensaje de LOG.
+      logger(messages.log.new_follow.replace("%name%",user.name).replace("%surname%",user.surname)
+      .replace("%email%",user.email).replace("%password%",user.password).replace("%nick%",user.nick));
+    }
+  }); 
+});
+/*======================================================*/
+/*               ENDPOINT >> UNFOLLOW                   */
+/*======================================================*/
+app.delete('/twitter/users/:me/following/:user', function (req, res) {
+  const token  = req.query; // Token recibido como parámetro
+  const me = req.query.me;
+  const id  = req.params;  // ID del usuario recibido en los parámetros de la ruta
+
+  // Verificar que el token esté presente
+  if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
+  // Verifica que el Token sea igual que la ID.
+  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
+
+  if (!id) return res.status(400).json({ error: 'El ID del usuario es requerido' });
+  // Llamar al método deleteUser para eliminar el usuario
+  model.unfollow(token, id, (err, result) => {
+    if (err) {
+      res.status(400).send(err.message); // Error
+    } else {
+      logger(messages.log.new_unfollow.replace('%id%', me).replace('%userID%', id)); // Log 
+      res.status(200).send(result);
+    }
+  });
 });
 
 /*======================================================*/
@@ -176,4 +274,45 @@ app.post('/twitter/tweets', function (req, res) {
   });
 });
 
+/*======================================================*/
+/*               ENDPOINT >> ADDRETWEET                 */
+/*======================================================*/
+/*app.post('/twitter/tweets/:tweet/retweets', function (req, res) {
+  const token  = req.query; // Token recibido como parámetro
+  const tweet = req.query.tweet;
+  // Validaciones
+  if (!token) return res.status(400).json({ error: 'Token es requerido' });
+  if (!content) return res.status(400).json({ error: 'El contenido del tweet es requerido' });
+
+  // Crear un nuevo tweet
+  model.addTweet(token, content, (err, tw) => {
+    if (err) {
+      console.log(err.message);
+      res.status(400).send(err.message);
+    }
+    else {
+      logger(messages.log.new_tweet.replace("%userID%", token).replace("%content%", content));
+      res.send(tw);
+    }
+  });
+});*/
+
+/*======================================================*/
+/*                  ENDPOINT >> LIKE                    */
+/*======================================================*/
+
+/*======================================================*/
+/*                 ENDPOINT >> DISLIKE                  */
+/*======================================================*/
+
+
+
+
+
+
+
+
+
+
 app.listen(8080);
+console.log("Escuchando en el puerto 8080")

@@ -156,16 +156,7 @@ function listFollowers(token, opts, cb) {
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        si funcionó la petición de follow o no        */
 function follow(token, userId, cb){
-    axios.post(url + '/users/' + token + '/following',
-        {
-            params: { token: token, id: userId }
-        })
-        .then(res => {
-            cb(null, res.data)
-        })
-        .catch(err => {
-            cb(err);
-        });
+
 }
 
 
@@ -178,16 +169,7 @@ function follow(token, userId, cb){
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        si funcionó la petición de unfollow o no      */
 function unfollow(token, userId, cb){
-    axios.delete(url + '/users/' + token + '/following/'+ userId,
-        {
-            params: { token: token }
-        })
-        .then(res => {
-            cb(null, res.data)
-        })
-        .catch(err => {
-            cb(err);
-        });
+
 }
 
 /*======================================================*/

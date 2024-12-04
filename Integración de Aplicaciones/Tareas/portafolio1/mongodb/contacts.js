@@ -37,35 +37,44 @@ const rl = readline.createInterface({
 
 const lang = {
     prompt : colors.green + colors.bold + "Contacts : " + colors.reset,
-    answer : colors.bold + colors.cyan + `🎉 ¡Bienvenido al programa de Contactos! ¿Cómo te llamas? : ` + colors.reset,
+    answer : colors.bold + colors.cyan + `🎉 ¡Bienvenido al programa de Contactos basado en MongoDB! ¿Cómo te llamas? : ` + colors.reset,
     welcome : `\n📚 ¿Qué tal ${colors.yellow}${colors.bold}%name%${colors.reset}? ¡Vamos a ponernos al día! 📚\n` + colors.reset + 
     `⏳ Serás redirigido al menú principal en: ${colors.yellow}${colors.bold}%seconds%${colors.reset} segundos...` + colors.reset,
     countdown_high : `⏰ Quedan ${colors.yellow}${colors.bold}%seconds%${colors.reset} segundos...`,
     countdown_low : `⏳ ¡Ya casi! Solo quedan ${colors.red}${colors.bold}%seconds%${colors.reset} segundos...`,
     redirect : colors.yellow + colors.bold + `\n🚀 Redirigiendo al menú principal...\n` + colors.reset,
-    
-    
-    
-    invalid_action : "\n> Acción no válida. Revisa las posibles opciones.\n",
-    return : "\nRegresando al menú principal de comandos...\n",
+
     log : {
-        contactAdded : `[LOG] >> Se ha registrado la acción para crear un nuevo usuario a la base de datos. Email: %email%, Title: %title%`,
-        contactList : `[LOG] >> Se ha registrado la acción para listar los contactos de la base de datos. Con una query: [%query%].`,
-        contactRemove : `[LOG] >> Se ha registrado la acción para eliminar al usuario [%email%] de la base de datos.`,
-        execFunct : `[LOG] >> Ejecutando la función %funcion%`,
-        exit : `[LOG] >> Cerrando el programa...`,
+        add_contact : `Se ha registrado la acción para crear un nuevo usuario a la base de datos. Email: %email%, Title: %title%`,
+        list_contact : `Se ha registrado la acción para listar los contactos de la base de datos. Con query: [%query%].`,
+        delete_contact : `Se ha registrado la acción para eliminar al usuario [%email%] de la base de datos.`,
+        update_contact : `Se ha registrado la acción para eliminar al usuario [%email%] de la base de datos.`,
+        exit : `Cerrando el programa...`,
     },
     cmd : {
         add : {
-            email : "(ADD) : Introduzca el Email: ",
-            title : "(ADD) :_Introduzca el Title: ",
-            success : `(ADD) : Has agregado un nuevo contacto.`,
+            no_email : `Debes especificar el parámetro -e <email>. Recuerda el comando: ${colors.yellow}add -e <email> -t <title>${colors.reset}`,
+            no_title : "Debes especificar el parámetro -t <title>",
+            already_exists : `Ya existe el email <%email%> registrado en nuestra base de datos`,
+            success : `Has agregado un nuevo contacto a la base de datos.`,
         },
         list : {
-            query : "(LIST) : Introduzca una query (En blanco si no existe): ",
+            empty : "La lista de contactos especificada está vacía.",
+            parse_err : `Error al parsear. Utiliza algo similar a esto: ${colors.yellow}list -q '{ email : "nuevoEmail" }'${colors.reset}`,
+            success : "Imprimiendo lista de contactos..."
         },
-        remove : '(REMOVE) : Introduce el email del usuario que quieres eliminar: ',
-        exit : '(EXIT) : Saliendo del programa. Nos vemos pronto %username%.',
+        delete : {
+            no_email : `Debes especificar el parámetro -e <email>. Recuerda el comando: ${colors.yellow}remove -e <email>${colors.reset}`,
+            not_found : `El email <%email%> no está registrado en nuestras bases de datos.`,
+            faul : 'Parece que algo ha fallado y no se ha podido eliminar al usuario.',
+            success : "Contacto eliminado de la base de datos."
+        },
+        update : {
+            no_params : `No has especificado ningún parámetro para cambiar.`,
+            no_data : 'No has introducido valores para actualizar tus datos.',
+            success : "Has actualizado tus datos de contacto."
+        },
+        exit : colors.yellow + 'Saliendo del programa. Nos vemos pronto %name%.' + colors.reset,
         
     },
     main_menu : figlet.textSync('Menú Principal', { horizontalLayout: 'full' }) + colors.reset +
@@ -74,10 +83,9 @@ const lang = {
         '\n' +
         colors.yellow + '    [1] ADD <email> <title>        : ' + colors.white + 'Añadir un nuevo contacto.' + colors.reset + '\n' +
         colors.yellow + '    [2] LIST [query]               : ' + colors.white + 'Listar todos los contactos.' + colors.reset + '\n' +
-        colors.yellow + '    [3] UPDATE <email> <values>    : ' + colors.white + 'Actualizar algún contacto.' + colors.reset + '\n' +
-        colors.yellow + '    [4] REMOVE <email>             : ' + colors.white + 'Eliminar un contacto.' + colors.reset + '\n' +
-        colors.yellow + '    [5] EXIT                       : ' + colors.white + 'Salir del programa.' + colors.reset + '\n',
-    err : `Error: %error%`        
+        colors.yellow + '    [3] UPDATE [email] [title]     : ' + colors.white + 'Actualizar algún contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [4] DELETE <email>             : ' + colors.white + 'Eliminar un contacto.' + colors.reset + '\n' +
+        colors.yellow + '    [5] EXIT                       : ' + colors.white + 'Salir del programa.' + colors.reset + '\n',       
 }
 
 
@@ -90,15 +98,15 @@ rl.question(lang.answer, (res) => {
 
 // Llama a uno función que hace una cuenta atrás y luego imprime el menú de comandos.
 function countdown(seconds) {
-    console.log(lang.welcome.replace("%seconds%",seconds).replace("%name%",name));
+    print((lang.welcome.replace("%seconds%",seconds).replace("%name%",name)), 0);
     
     const interval = setInterval(() => {
         seconds--;
-        if (seconds > 3) console.log(lang.countdown_high.replace("%seconds%",seconds));
-        else if (seconds <= 3 && seconds > 0) console.log(lang.countdown_low.replace("%seconds%",seconds));
+        if (seconds > 3) print((lang.countdown_high.replace("%seconds%",seconds)), 0);
+        else if (seconds <= 3 && seconds > 0) print((lang.countdown_low.replace("%seconds%",seconds)), 0);
         else {
-            console.log(lang.redirect); clearInterval(interval); // Detener el intervalo
-            rl.setPrompt(lang.prompt);  console.log(lang.main_menu); rl.prompt(); 
+            print(lang.redirect, 0); clearInterval(interval); // Detener el intervalo
+            rl.setPrompt(lang.prompt);  print(lang.main_menu, 0); rl.prompt(); 
             rl.on("line", line => {   
                 if(line){
                     let args = minimist(fields = line.match(/'[^']*'|\S+/g));
@@ -116,28 +124,70 @@ function menu(args, cb) {
     else {         
         switch ((args._[0]).toLowerCase()) { 
             case "add":
-                if(!args.e) { console.log("Error: No email"); cb(); return; }
-                if(!args.t) { console.log("Error: No email"); cb(); return; }
-                console.log("add");
+                if(!args.e || (typeof args.e !== 'string' || args.e.trim() === '')) { print(lang.cmd.add.no_email, 5); cb(); return; }
+                if(!args.t || (typeof args.t !== 'string' || args.t.trim() === '')) { print(lang.cmd.add.no_title, 5); cb(); return; }
 
                 addContact(args.t, args.e,(err) => {
-                    if(err) console.log(lang.err.replace("%error%",err.message));
-                    else console.log(lang.cmd.add.success);
-                    logMessage(lang.log.contactAdded.replace("%email%",args.e).replace("%title%",args.t));
+                    if(err) print((err.message), 5);
+                    else {
+                        print(lang.cmd.add.success, 2);
+                        logger(lang.log.add_contact.replace("%email%",args.e).replace("%title%",args.t));
+                    }
+                    cb();
                 });
 
-                cb();
             break;
             case "list":
-                console.log("list");
-                let query = [];
-                if(args.q) query = args.q
+                let query = {};
+                if(args.q) query = args.q;
                 listContacts(query, (err, contacts) => {
-                    if(err) console.log(lang.err.replace("%error%",err.message));
-                    else console.table(contacts);
-                    logMessage(lang.log.contactList.replace("%query%",query));
+                    if(err) print((err.message), 5);
+                    else {
+                        if(contacts.length == 0) { print(lang.cmd.list.empty, 1); cb(); return; }
+                        else console.table(contacts);
+                        print(lang.cmd.list.success, 2);  
+                        logger(lang.log.list_contact.replace("%query%", query));
+                    }
+                    cb();
+                
                 });  
             break;
+            case "update":
+                const contact = {};
+
+                if (args.e && typeof args.e === 'string' && args.e.trim() !== '') {
+                    contact.email = args.e; // Asignar solo si args.e es válido
+                }
+
+                if (args.t && typeof args.t === 'string' && args.t.trim() !== '') {
+                    contact.title = args.t; // Asignar solo si args.t es válido
+                }
+                updateContact(contact, (err, result) => {
+                    if(err) print((err.message), 5);
+                    else {
+                        print(lang.cmd.update.success, 2);
+                        logger(lang.log.update_contact);
+                    }
+                    cb();
+                });
+
+            break;
+            case "delete":
+                if(!args.e || (typeof args.e !== 'string' || args.e.trim() === '')) { print(lang.cmd.delete.no_email, 5); cb(); return; }
+                deleteContact(args.e, (err, result) => {
+                    if(err) print((err.message), 5);
+                    else {
+                        print(lang.cmd.delete.success, 2);
+                        logger(lang.log.delete_contact.replace("%email%",args.e));
+                    }
+                    cb();
+                });
+
+            break;
+            case "exit":
+                print((lang.cmd.exit.replace("%name%",name)),0);
+                name = undefined;
+                process.exit(0);
             default:
                 console.log(lang.main_menu);
                 cb();
@@ -145,153 +195,151 @@ function menu(args, cb) {
     }
 }
 
-
-function logMessage(message){
-    console.log('\x1b[3m'+message+'\x1b[0m');
-}
-
-// Main Menú ; Envía todos los comandos y acciones disponibles.
-function menuu(){
-    rl.question(lang.cmd.main+"\n> Acción: ", (action) => {
-        switch(action.toUpperCase()){
-            case `ADD`:
-                rl.question(lang.cmd.add.email, (email) => {
-                    rl.question(lang.cmd.add.title, (title) => {                      
-                                   
-                    });
-                }); 
-                               
-                break;
-            case `LIST`:
-                rl.question(lang.cmd.list.query, (query) => {
-                    listContacts(query, (err, contacts) => {
-                        if(err) console.log(lang.err.replace("%error%",err.stack));
-                        else console.log(contacts);
-                        logMessage(lang.log.contactList.replace("%query%",query));
-                        console.log(lang.return);
-                        menu();
-                    });                         
-                }); 
-            
-                break;
-            case `UPDATE`:
-                rl.question("(UPDATE) : Email del usuario que deseas modificar: ", (oldEmail) => {
-                    rl.question("(UPDATE) : Nuevo Email: ", (email) => {
-                        rl.question("(UPDATE) : Nuevo Title: ", (title) => {
-                            updateContact(oldEmail, email, title, (err) => {
-                                if(err) console.log(lang.err.replace("%error%",err.stack));
-                                else console.log(lang.cmd.add.success);
-                                console.log(lang.return);
-                                menu();
-                            });
-                        }); 
-                    }); 
-                }); 
-
-                break;
-            case `REMOVE`:
-                rl.question(lang.cmd.remove, (email) => {
-                    removeContact(email, (err) => {
-                        if(err) console.log(lang.err.replace("%error%",err.stack));
-                        logMessage(lang.log.contactRemove.replace("%email%",email));
-                        console.log(lang.return);
-                        menu();
-                    });                  
-                }); 
-                           
-                break;
-            case `EXIT`:
-                rl.close();  
-                console.log(lang.cmd.exit.replace("%username%", username));  
-                logMessage(lang.log.exit);                 
-                break;
-            default:
-                console.log(lang.invalid_action);
-                menu();
-        }
-        
-    }); 
-} 
-
-
-/* Función para recoger todos los usuarios de la base de datos */
-function listContacts(query, cb){
-    logMessage(lang.log.execFunct.replace(`%funcion%`, `listContacts()`));
-    const client = new MongoClient('mongodb://localhost:27017');
-    // const client = new MongoClient('mongodb://0.0.0.0:27017');
-    client.connect((err, client) => {
-        if(err) cb(err);
-        else{
-            //client.db("ej4").collection("contacts").insertOne();
-            let db = client.db("ej4");
-            let col = db.collection("contacts");
-            col.find({}).toArray((err, contacts) => {
-                if(err) cb(err);
-                else cb(null, contacts);
-                client.close();
-            });
-        }
-    });
-}
-
-/* Función para eliminar a un contacto */
-function removeContact(email, cb){
-    logMessage(lang.log.execFunct.replace(`%funcion%`, `removeContact()`));
-    const client = new MongoClient('mongodb://localhost:27017');
-    client.connect((err, client) => {
-        if(err) cb(err);
-        else{
-            let db = client.db("ej4");
-            let col = db.collection("contacts");
-            col.deleteOne({email: email}, (err, res) => {
-                if(err) cb(err);
-                else cb();
-                client.close();
-            });
-        }
-    });
-
-} 
-
 /* Función para recoger los contactos y añadirlos a la base de datos */
-function addContact(title, email, cb){
-    logMessage(lang.log.execFunct.replace(`%funcion%`, `addContact()`));
+function addContact(title, email, cb) {
     const client = new MongoClient('mongodb://localhost:27017');
     client.connect((err, client) => {
-        if(err) cb(err);
-        else{
-            //client.db("ej4").collection("contacts").insertOne();
-            let db = client.db("ej4");
-            let col = db.collection("contacts");
-            col.insertOne({title:title, email:email}, (err, res) => {
-                if(err) cb(err);
-                else cb();
+        if (err) return cb(err);
+
+        let db = client.db("ej4");
+        let col = db.collection("contacts");
+
+        // Verificar si el correo electrónico ya existe
+        col.findOne({ email: email }, (err, existingContact) => {
+            if (err) {
+                client.close();
+                return cb(err);
+            }
+
+            // Si ya existe un contacto con el mismo correo, se retorna un error
+            if (existingContact) {
+                client.close();
+                return cb(new Error(lang.cmd.add.already_exists.replace("%email%", email)));
+            }
+
+            // Si no existe, insertar el nuevo contacto
+            col.insertOne({ title: title, email: email }, (err) => {
+                if (err) {
+                    client.close();
+                    return cb(err);
+                }
+                cb(); // Contacto insertado correctamente
                 client.close();
             });
-        }
+        });
     });
-    
 }
 
-function updateContact(oldEmail, email, title, cb){
-    logMessage(lang.log.execFunct.replace(`%funcion%`, `updateContact()`));
+// Función para listar los contactos en MongoDB según la consulta
+function listContacts(query, cb) {
     const client = new MongoClient('mongodb://localhost:27017');
     client.connect((err, client) => {
-        if(err) cb(err);
-        else{
-            //client.db("ej4").collection("contacts").insertOne();
-            let db = client.db("ej4");
-            let col = db.collection("contacts");
-            /*
+        if (err) return cb(err);
 
-            Revisar comportamiento erroneo.
+        let db = client.db("ej4");
+        let col = db.collection("contacts");
 
-            */
-            col.updateOne({ email : oldEmail },{ $set: { title : title , email : email } }, (err, res) => {
-                if(err) cb(err);
-                else cb();
+        let jsonQuery = {}; /* Variable para almacenar la query */
+        if(query && typeof query === 'string' && query.trim() !== ''){
+            const qu = query.replace(/(\w+)\s*:/g, '"$1":') // Añadir comillas a la clave.
+            .replace(/^'+|'+$/g, '') // Quita las comillas de fuera.
+            .replace(/'/g, '"');// Cambiar comillas simples por comillas dobles.
+                     
+            try { jsonQuery = JSON.parse(qu); } // Parseamos para convertirlo en un JSON.
+            catch(err){ return cb(new Error(lang.cmd.list.parse_err)); } // Mensaje de inválid format JSON.              
+        }  
+
+        let _query = jsonQuery;
+
+        col.find(_query).toArray((err, contacts) => {
+            if (err) {
+                client.close();
+                return cb(err);
+            }
+
+            cb(null, contacts);
+            client.close();
+        });
+    });
+}
+
+function updateContact(contact, cb) {
+    const client = new MongoClient('mongodb://localhost:27017');
+    client.connect((err, client) => {
+        if (err) return cb(err);
+
+        let db = client.db("ej4");
+        let col = db.collection("contacts");
+
+        // Filtrar las propiedades que no sean undefined
+        const updateFields = Object.fromEntries(
+            Object.entries(contact).filter(([key, value]) => value !== undefined)
+        );
+
+        if (Object.keys(updateFields).length > 0) {
+            col.updateOne({ email: contact.email }, { $set: updateFields }, (err, result) => {
+                if (err) return cb(err);
+                cb(null, result);  // Llamamos al callback con el resultado
                 client.close();
             });
+        } else {
+            cb(new Error(lang.cmd.update.no_data));
+            client.close();
         }
     });
-} 
+}
+
+// Función para eliminar un contacto por su email
+function deleteContact(email, cb) {
+    const client = new MongoClient('mongodb://localhost:27017');
+    client.connect((err, client) => {
+        if (err) return cb(err);
+
+        let db = client.db("ej4");
+        let col = db.collection("contacts");
+
+        // Buscar si existe un contacto con ese correo electrónico
+        col.findOne({ email: email }, (err, existingContact) => {
+            if (err) {
+                client.close();
+                return cb(err);
+            }
+
+            // Si no existe el contacto, retornar un error
+            if (!existingContact) {
+                client.close();
+                return cb(new Error(lang.cmd.delete.not_found.replace("%email%", email)));
+            }
+
+            // Si existe, eliminar el contacto
+            col.deleteOne({ email: email }, (err, result) => {
+                if (err) {
+                    client.close();
+                    return cb(err);
+                }
+
+                if (result.deletedCount === 0) {
+                    client.close();
+                    return cb(new Error(lang.cmd.delete.fail)); // Si no se eliminó el contacto
+                }
+
+                // Si el contacto fue eliminado correctamente
+                cb(null, lang.cmd.delete.success.replace("%email%", email));
+                client.close();
+            });
+        });
+    });
+}
+
+function print(message, type){
+    switch(type){
+        case 0: console.log(message); break;
+        case 1: console.log(colors.cyan + "[Info] " + colors.gray + ">> "+ colors.white + message + colors.reset); break;
+        case 2: console.log(colors.green + "[Éxito] " + colors.gray + ">> "+ colors.white + message + colors.reset); break;
+        case 5: console.log(colors.red + "[Error] " + colors.gray + ">> "+ colors.white + message + colors.reset);  break;
+    }
+}
+
+function logger(message){
+    console.log('\x1b[3m'+ colors.gray + "[LOG] >> " + message+'\x1b[0m');
+}
