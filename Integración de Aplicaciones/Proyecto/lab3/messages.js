@@ -113,7 +113,6 @@ cmd = {
   },
   err : {
     no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
-    invalid : ">> Operación no permitida por Token inválido."
   },
   exit : {
     logged : "\x1b[34m>> ¿Ya te marchas \x1b[33m%nick%\x1b[0m\x1b[34m? ¡Te veo más tarde!\x1b[0m",
