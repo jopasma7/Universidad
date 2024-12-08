@@ -88,7 +88,7 @@ const lang = {
         delete : {
             no_email : `Debes especificar el parámetro ${colors.yellow}-e <email>${colors.reset}. Recuerda el comando: ${colors.yellow}delete -e <email>${colors.reset}`,
             not_found : `El email <%email%> no existe en tus contactos.`,
-            faul : 'Parece que algo ha fallado y no se ha podido eliminar al usuario.',
+            fail : 'Parece que algo ha fallado y no se ha podido eliminar al usuario.',
             success : "Contacto eliminado de tu lista de contactos."
         },
         update : {
@@ -254,8 +254,8 @@ function menu(args, cb) {
 }
 
 function register(email, password, cb) {
-    if (!email) return cb(new Error("No email provided"));
-    if (!password) return cb(new Error("No password provided"));
+    if(!email) return cb(new Error(lang.cmd.register.no_email));
+    if(!password) return cb(new Error(lang.cmd.register.no_pass));
 
     // Leer archivo JSON
     fs.readFile(path, 'utf8', (err, data) => {
@@ -289,7 +289,7 @@ function register(email, password, cb) {
 
         // Verificar si el usuario ya existe
         const existingUser = db.users.find(user => user.email === email);
-        if (existingUser) return cb(new Error(`User with email ${email} already exists`));
+        if (existingUser) return cb(new Error(lang.cmd.register.already_exists.replace("%email%", email))); 
 
         // Crear nuevo usuario
         const newUser = { email, password, contacts: [] };
@@ -305,9 +305,8 @@ function register(email, password, cb) {
 
 
 function login(email, password, cb) {
-    // Validar entrada
-    if (!email) return cb(new Error("No email provided"));
-    if (!password) return cb(new Error("No password provided"));
+    if(!email) return cb(new Error(lang.cmd.login.no_email));
+    if(!password) return cb(new Error(lang.cmd.login.no_pass));
 
     // Leer archivo JSON
     fs.readFile(path, 'utf8', (err, data) => {
@@ -318,16 +317,16 @@ function login(email, password, cb) {
 
         // Buscar el usuario por email
         const user = db.users.find(u => u.email === email);
-        if (!user) return cb(new Error("Invalid email"));
-        if (user.password !== password) return cb(new Error("Invalid password"));
+        if (!user) return cb(new Error(lang.cmd.login.invalid_email));
+        if (user.password !== password) return cb(new Error(lang.cmd.login.invalid_pass));
 
         cb(null, user); // Login exitoso
     });
 }
 
 function addContact(contactEmail, title, cb) {
-    if (!title) return cb(new Error("No title provided"));
-    if (!contactEmail) return cb(new Error("No contact email provided"));
+    if(!title) return cb(new Error(lang.cmd.add.no_title));
+    if(!contactEmail) return cb(new Error(lang.cmd.add.no_email));
 
     // Leer archivo JSON
     fs.readFile(path, 'utf8', function (err, data) {
@@ -337,15 +336,15 @@ function addContact(contactEmail, title, cb) {
         try {
             db = JSON.parse(data);
         } catch (parseError) {
-            return cb(new Error("Error parsing JSON"));
+            return cb(new Error("Error al obtener los datos JSON"));
         }
 
         const u = db.users.find(u => u.email === user.email);
-        if (!u) return cb(new Error("User not found"));
+        if (!u) return cb(new Error("Usuario no encontrado"));
 
         // Verificar si el contacto ya existe
         if (u.contacts.some(contact => contact.email === contactEmail)) {
-            return cb(new Error("Contact already exists"));
+            return cb(new Error(lang.cmd.add.already_exists.replace("%email%",contactEmail)));
         }
 
         // Agregar contacto
@@ -372,17 +371,8 @@ function listContacts(query, cb) {
     });
 }
 
-
-// FALTA
-
 function updateContact(contactEmail, newValues, cb) {
-    // Asegurarnos de que cb es una función
-    if (typeof cb !== 'function') {
-        console.error("El callback no es una función.");
-        return;
-    }
-
-    const { newTitle, newEmail } = newValues;
+    const { nuevoTitle: newTitle, nuevoEmail: newEmail } = newValues;
 
     // Leer archivo JSON
     fs.readFile(path, 'utf8', (err, data) => {
@@ -392,16 +382,16 @@ function updateContact(contactEmail, newValues, cb) {
         try {
             db = JSON.parse(data);
         } catch (parseError) {
-            return cb(new Error("Error parsing JSON"));
+            return cb(new Error("Error al obtener los datos JSON"));
         }
 
         // Buscar al usuario por email
         const asd = db.users.find(u => u.email === user.email);
-        if (!asd) return cb(new Error("User not found"));
+        if (!asd) return cb(new Error("Tu Usuario no se ha encontrado."));
 
         // Buscar el contacto dentro de los contactos del usuario
         const contact = asd.contacts.find(c => c.email === contactEmail);
-        if (!contact) return cb(new Error("Contact not found"));
+        if (!contact) return cb(new Error(lang.cmd.update.not_found.replace("%email%",contactEmail)));
 
         // Actualizar los valores del contacto
         if (newTitle) contact.title = newTitle;
@@ -416,13 +406,23 @@ function updateContact(contactEmail, newValues, cb) {
 }
 
 function deleteContact(contactEmail, cb) {
-    // Leer archivo JSON
     fs.readFile(path, 'utf8', (err, data) => {
         if (err) return cb(err);
 
-        let db = JSON.parse(data);
+        let db;
+        try {
+            db = JSON.parse(data);
+        } catch (parseError) {
+            return cb(new Error("Error al obtener los datos del JSON"));
+        }
+
+        // Buscar al usuario por email
         const u = db.users.find(u => u.email === user.email);
-        if (!u) return cb(new Error("User not found"));
+        if (!u) return cb(new Error("Tu Usuario no se ha encontrado."));
+
+        // Verificar si el contacto existe
+        const contactExists = u.contacts.some(c => c.email === contactEmail);
+        if (!contactExists) return cb(new Error(lang.cmd.delete.not_found.replace("%email%",contactEmail)));
 
         // Eliminar el contacto
         u.contacts = u.contacts.filter(c => c.email !== contactEmail);
@@ -430,7 +430,7 @@ function deleteContact(contactEmail, cb) {
         // Escribir los cambios en el archivo JSON
         fs.writeFile(path, JSON.stringify(db, null, 2), (err) => {
             if (err) return cb(err);
-            cb(null); // Contacto eliminado exitosamente
+            cb(null); 
         });
     });
 }

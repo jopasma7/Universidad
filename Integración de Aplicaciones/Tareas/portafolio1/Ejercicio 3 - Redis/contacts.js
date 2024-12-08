@@ -119,21 +119,34 @@ const lang = {
 
 
 // Inicia el programa y manda un Titulo de Contactos y una mensaje. Luego inicia Countdown.
-console.log(figlet.textSync('Contactos', { font: 'Big', horizontalLayout: 'full' }));
-rl.question(lang.answer, (res) => {
-    user.name = res;
-    print(lang.welcome2.replace("%name%", user.name),0);
-    print((lang.start_menu) ,0);
-    rl.setPrompt(lang.prompt); rl.prompt(); 
-            rl.on("line", line => {   
-                if(line){
-                    let args = minimist(fields = line.match(/'[^']*'|\S+/g));
-                    menu(args, () => {        
-                        rl.prompt();    
-                    }); 
-                } else rl.prompt(); 
-            });
-});
+
+const client = redis.createClient(URL);
+    client.connect().then(() => {
+        client.disconnect;
+
+        console.log(figlet.textSync('Contactos', { font: 'Big', horizontalLayout: 'full' }));
+        rl.question(lang.answer, (res) => {
+            user.name = res;
+            print(lang.welcome2.replace("%name%", user.name),0);
+            print((lang.start_menu) ,0);
+            rl.setPrompt(lang.prompt); rl.prompt(); 
+                    rl.on("line", line => {   
+                        if(line){
+                            let args = minimist(fields = line.match(/'[^']*'|\S+/g));
+                            menu(args, () => {        
+                                rl.prompt();    
+                            }); 
+                        } else rl.prompt(); 
+                    });
+        });
+    }).catch((err) => {
+        if (err) {
+            print("No se puede conectar a la base de datos de Redis en la dirección: "+URL, 5)
+            process.exit(0);
+        }
+    });
+
+
 
 
 function menu(args, cb) {    
@@ -164,7 +177,7 @@ function menu(args, cb) {
                         print(lang.cmd.login.success, 2);
                         logger(lang.log.new_login.replace("%email%",args.e));
                         user.email = args.e;
-                        let seconds = 5;
+                        let seconds = 0;
                         print((lang.welcome.replace("%seconds%",seconds).replace("%name%",user.name)), 0);
                     
                         const interval = setInterval(() => {
@@ -275,7 +288,7 @@ function register(email, password, cb) {
             if (exists) return _cb(new Error(lang.cmd.register.already_exists.replace("%email%", email)));
 
             // Registrar nuevo usuario
-            client.hSet(userKey, { email: email, password: password, contacts: JSON.stringify([]), }).then(() => {
+            client.hSet(userKey, { email: email, password: password, }).then(() => {
                 _cb(null, `Usuario ${email} registrado correctamente.`);
             }).catch(err => _cb(err));
         }).catch(err => _cb(err));
@@ -298,6 +311,7 @@ function login(email, password, cb) {
 
         // Comprobar si existe el usuario en Redis
         const userKey = `user:${email}`;
+        const contactsKey = `contacts:${email}`;
 
         client.exists(userKey).then(exists => {
             if (!exists) return _cb(new Error(lang.cmd.login.invalid_email));
@@ -311,10 +325,12 @@ function login(email, password, cb) {
                     return _cb(new Error(lang.cmd.login.invalid_pass));
                 }
 
-                // Cargar los contactos del usuario en memoria
-                user.contacts = JSON.parse(userData.contacts || '[]');
-
-                _cb(null, `Usuario ${email} autenticado con éxito.`);
+                client.lRange(contactsKey, 0, -1)
+                    .then(contacts => {
+                        user.contacts = contacts.map(contact => JSON.parse(contact)); // Si los elementos están serializados en JSON
+                        console.log(user.contacts);
+                        _cb(null, `Usuario ${email} autenticado con éxito.`);
+                    }).catch(err => _cb(new Error(err.message)));       
             }).catch(err => _cb(new Error(err.message)));
         }).catch(err => _cb(new Error(err.message)));
     }).catch(err => {
@@ -394,53 +410,52 @@ function listContacts(query, cb) {
     }
 }
 
+function updateContact(contactEmail, values, cb) {
+    if (!contactEmail) return cb(new Error(lang.cmd.update.no_email));
+    if (!values) return cb(new Error(lang.cmd.update.no_params));
 
-
-
-
-
-function updateContact(email, values, cb) {
-    if (!email) return cb(new Error(lang.cmd.update.no_email));
-    if (!values || !values.title) return cb(new Error(lang.cmd.update.no_values));
+    const { nuevoTitle: newTitle, nuevoEmail: newEmail } = values;
+    if(!values.nuevoTitle && !values.nuevoEmail) return cb(new Error(lang.cmd.update.no_params));
 
     const client = redis.createClient(URL);
-
     client.connect().then(() => {
         const _cb = (err, res) => {
             client.disconnect();
             cb(err, res);
         };
 
-        const userKey = `user:${email}`;
-        const contactKey = `contacts:${email}`;
+        const userKey = `user:${user.email}`;
+        const contactKey = `contacts:${user.email}`;
 
-        // Verificar si el usuario existe
-        client.exists(userKey).then(exists => {
-            if (!exists) return _cb(new Error(lang.cmd.update.invalid_email));
+        // Obtener los contactos del usuario
+        client.lRange(contactKey, 0, -1).then(contacts => {
+            const parsedContacts = contacts.map(contact => JSON.parse(contact));
 
-            // Obtener los contactos del usuario
-            client.lRange(contactKey, 0, -1).then(contacts => {
-                const parsedContacts = contacts.map(contact => JSON.parse(contact));
+            // Buscar el contacto a actualizar
+            const contactIndex = parsedContacts.findIndex(contact => contact.email === contactEmail);
+            if (contactIndex === -1) {
+                return _cb(new Error(lang.cmd.update.not_found.replace("%email%", contactEmail)));
+            }
 
-                // Encontrar el contacto a actualizar
-                const contactIndex = parsedContacts.findIndex(contact => contact.email === values.email);
-                if (contactIndex === -1) {
-                    return _cb(new Error(lang.cmd.update.contact_not_found.replace("%email%", values.email)));
-                }
+            // Actualizar el contacto con los nuevos valores
+            if (newEmail) parsedContacts[contactIndex].email = newEmail;
+            if (newTitle) parsedContacts[contactIndex].title = newTitle;
 
-                // Actualizar el contacto
-                parsedContacts[contactIndex] = { ...parsedContacts[contactIndex], ...values };
+            // Actualizar también en memoria (user.contacts)
+            const contactInMemoryIndex = user.contacts.findIndex(contact => contact.email === contactEmail);
+            if (contactInMemoryIndex !== -1) {
+                if (newEmail) user.contacts[contactInMemoryIndex].email = newEmail;
+                if (newTitle) user.contacts[contactInMemoryIndex].title = newTitle;
+            }
 
-                // Guardar los cambios en Redis
-                client.del(contactKey).then(() => {
-                    // Vuelves a guardar la lista completa de contactos actualizada
-                    client.rPush(contactKey, ...parsedContacts.map(contact => JSON.stringify(contact)))
-                        .then(() => {
-                            _cb(null, `Contacto ${values.email} actualizado correctamente.`);
-                        })
-                        .catch(err => _cb(err));
+            // Guardar el contacto actualizado en Redis
+            client.del(contactKey).then(() => {
+                const updatedContacts = parsedContacts.map(contact => JSON.stringify(contact));
+                client.rPush(contactKey, ...updatedContacts).then(() => {
+                    _cb(null, `Contacto ${contactEmail} actualizado correctamente.`);
                 }).catch(err => _cb(err));
-            }).catch(err => _cb(new Error(err.message)));
+            }).catch(err => _cb(err));
+
         }).catch(err => _cb(new Error(err.message)));
     }).catch(err => {
         console.error('Error al conectar con Redis:', err.message);
@@ -449,33 +464,44 @@ function updateContact(email, values, cb) {
 }
 
 // Función para eliminar un contacto por su email
-function deleteContact(email, cb) {
-    if (!email) return cb(new Error(lang.cmd.delete.no_email));
-
-    const userKey = `user:${user.email}`;
-    const _cb = (err, res) => cb(err, res);
+function deleteContact(contactEmail, cb) {
+    if (!contactEmail) return cb(new Error(lang.cmd.delete.no_email));
 
     const client = redis.createClient(URL);
-    client.hGet(userKey, 'contacts')
-        .then(data => {
-            const contacts = JSON.parse(data || '[]');
+    client.connect().then(() => {
+        const _cb = (err, res) => {
+            client.disconnect();
+            cb(err, res);
+        };
 
-            // Verificar si el contacto existe
-            const contactIndex = contacts.findIndex(contact => contact.email === email);
-            if (contactIndex === -1) return _cb(new Error(lang.cmd.delete.not_found.replace("%email%", email)));
+        const contactKey = `contacts:${user.email}`;
 
-            // Eliminar el contacto de la lista
-            contacts.splice(contactIndex, 1);
+        // Obtener los contactos del usuario
+        client.lRange(contactKey, 0, -1).then(contacts => {
+            const parsedContacts = contacts.map(contact => JSON.parse(contact));
 
-            // Guardar la lista actualizada en Redis
-            client.hSet(userKey, 'contacts', JSON.stringify(contacts))
-                .then(() => {
-                    user.contacts = contacts; // Actualizar los contactos en memoria
-                    _cb(null, lang.cmd.delete.success.replace("%email%", email));
-                })
-                .catch(err => _cb(err));
-        })
-        .catch(err => _cb(err));
+            // Buscar el contacto a eliminar
+            const contactIndex = parsedContacts.findIndex(contact => contact.email === contactEmail);
+            if (contactIndex === -1) {
+                return _cb(new Error(lang.cmd.delete.not_found.replace("%email%", contactEmail)));
+            }
+
+            // Eliminar el contacto de la lista en memoria (user.contacts)
+            const contactInMemoryIndex = user.contacts.findIndex(contact => contact.email === contactEmail);
+            if (contactInMemoryIndex !== -1) {
+                user.contacts.splice(contactInMemoryIndex, 1); // Eliminar de la memoria local
+            }
+
+            // Eliminar el contacto de Redis
+            client.lRem(contactKey, 1, JSON.stringify(parsedContacts[contactIndex])).then(() => {
+                _cb(null, `Contacto ${contactEmail} eliminado correctamente.`);
+            }).catch(err => _cb(err));
+
+        }).catch(err => _cb(new Error(err.message)));
+    }).catch(err => {
+        console.error('Error al conectar con Redis:', err.message);
+        cb(new Error("No hay conexión a la base de datos de Redis."));
+    });
 }
 
 
