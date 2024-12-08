@@ -1,5 +1,7 @@
 const redis = require('redis');
-const readline = require('readline');
+const readline = require("readline"); 
+const minimist = require("minimist"); 
+const figlet = require('figlet');
 
 // Crear la interfaz de readline
 const rl = readline.createInterface({
@@ -68,7 +70,7 @@ function menu(){
                 rl.question("(UPDATE) : Email del usuario que deseas modificar: ", (oldEmail) => {
                     rl.question("(UPDATE) : Nuevo Email: ", (email) => {
                         rl.question("(UPDATE) : Nuevo Title: ", (title) => {
-                            addContact(oldEmail, email,title, (err) => {
+                            updateContact(oldEmail, email,title, (err) => {
                                 if(err) console.log(lang.err.replace("%error%",err.stack));
                                 else console.log(lang.cmd.add.success);
                             });

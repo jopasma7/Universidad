@@ -1,14 +1,16 @@
 {
-  "name": "sqlite",
+  "name": "redis",
   "version": "1.0.0",
+  "description": "",
   "main": "contacts.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "sqlite3": "^5.1.7"
+    "figlet": "^1.8.0",
+    "minimist": "^1.2.8",
+    "redis": "^4.7.0"
   }
 }

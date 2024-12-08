@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "email": "admin",
+      "password": "admin",
+      "contacts": [
+        {
+          "title": "asd",
+          "email": "asssd"
+        }
+      ]
+    },
+    {
+      "email": "admi",
+      "password": "admin",
+      "contacts": []
+    }
+  ]
+}

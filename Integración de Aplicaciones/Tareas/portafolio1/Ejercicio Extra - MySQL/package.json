@@ -8,7 +8,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mysql": "^2.18.1"
+    "figlet": "^1.8.0",
+    "minimist": "^1.2.8",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.5"
   },
   "description": ""
 }

@@ -4,8 +4,7 @@ const minimist = require("minimist");
 const figlet = require('figlet');
 
 // Lista de comandos para autocompletar
-const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'listFollowing', 'listFollowers', 
-    'follow', 'unfollow', 'addTweet', 'addRetweet', 'listTweets', 'like', 'dislike'];
+const commands = ['exit', 'add', 'update', 'delete', 'login', 'register', 'list'];
 
 const path = 'mongodb://localhost:27017';
 const dbName = "ejercicio4";
@@ -57,7 +56,7 @@ const lang = {
         new_register : `Se ha registrado en la base de datos un nuevo usuario con Email: %email%`,
         new_login : `Acaba de acceder a la aplicación un usuario con Email: %email%`,
         add_contact : `El usuario %name% ha agregado un nuevo contacto a su lista. Email: %email%, Title: %title%`,
-        list_contact : `Se ha registrado la acción para listar los contactos de %name%. Con query: [%query%].`,
+        list_contact : `Se ha registrado la acción para listar los contactos de %name%.`,
         delete_contact : `El usuario %name% ha efectuado una eliminación de uno de sus contactos: [%email%].`,
         update_contact : `El usuario %name% ha actualizado uno de sus contactos con email: [%email%].`,
         exit : `Cerrando el programa...`,
@@ -90,14 +89,15 @@ const lang = {
             success : "Imprimiendo tu lista de contactos..."
         },
         delete : {
-            no_email : `Debes especificar el parámetro -e <email>. Recuerda el comando: ${colors.yellow}remove -e <email>${colors.reset}`,
+            no_email : `Debes especificar el parámetro ${colors.yellow}-e <email>${colors.reset}. Recuerda el comando: ${colors.yellow}delete -e <email>${colors.reset}`,
             not_found : `El email <%email%> no existe en tus contactos.`,
             faul : 'Parece que algo ha fallado y no se ha podido eliminar al usuario.',
             success : "Contacto eliminado de tu lista de contactos."
         },
         update : {
-            no_params : `No has especificado ningún parámetro para cambiar.`,
-            no_data : 'No has introducido valores para actualizar los datos.',
+            no_params : `No has especificado ningún parámetro para cambiar. ${colors.yellow}update -c <contactoEmail> -e <newEmail> -t <newTitle>${colors.reset}`,
+            no_contact : `Especifica el email del contacto que quieres modificar con ${colors.yellow}-c <contactoEmail>${colors.reset}`,
+            not_found : `No se encontró el contacto: %email% en tus contactos.`,
             same_email : 'No puedes poner tu email en uso: %email% a alguno de tus contactos.',
             success : "Has actualizado los datos del contacto %email%."
         },
@@ -163,7 +163,7 @@ function menu(args, cb) {
                 if(!args.p || (typeof args.p !== 'string' || args.p.trim() === '')) { print(lang.cmd.login.no_pass, 5); cb(); return; }
 
                 login(args.e, args.p,(err) => {
-                    if(err) print((err.message), 5);
+                    if(err) { print((err.message), 5); cb() }
                     else {
                         print(lang.cmd.login.success, 2);
                         logger(lang.log.new_login.replace("%email%",args.e));
@@ -193,7 +193,7 @@ function menu(args, cb) {
                     if(err) print((err.message), 5);
                     else {
                         print(lang.cmd.add.success, 2);
-                        logger(lang.log.add_contact.replace("%email%",args.e).replace("%title%",args.t));
+                        logger(lang.log.add_contact.replace("%name%",user.name).replace("%email%",args.e).replace("%title%",args.t));
                     }
                     cb();
                 });
@@ -208,7 +208,7 @@ function menu(args, cb) {
                         if(contacts.length == 0) { print(lang.cmd.list.empty, 1); cb(); return; }
                         else console.table(contacts);
                         print(lang.cmd.list.success, 2);  
-                        logger(lang.log.list_contact.replace("%query%", query));
+                        logger(lang.log.list_contact.replace("%name%",user.name));
                     }
                     cb();
                 
@@ -217,16 +217,11 @@ function menu(args, cb) {
             case "update":
                 let values = {};
 
-                if (args.e && typeof args.e === 'string' && args.e.trim() !== '') {
-                    values.nuevoEmail = args.e; // Asignar solo si args.e es válido
-                }
-
-                if(!args.c || (typeof args.c !== 'string' || args.c.trim() === '')) { print("Especifica el email del contacto que quieres modificar con -e email", 5); cb(); return; }
-
-                if (args.t && typeof args.t === 'string' && args.t.trim() !== '') {
-                    values.nuevoTitle = args.t; // Asignar solo si args.t es válido
-                }
-                updateContact(args.c, values, (err, result) => {
+                if(!args.c || (typeof args.c !== 'string' || args.c.trim() === '')) { print(lang.cmd.update.no_contact, 5); cb(); return; }
+                if (args.e && typeof args.e === 'string' && args.e.trim() !== '') values.nuevoEmail = args.e;
+                if (args.t && typeof args.t === 'string' && args.t.trim() !== '') values.nuevoTitle = args.t;
+                if(values == {}) { print(lang.cmd.update.no_params, 5); cb(); return; }
+                updateContact(args.c, values, (err) => {
                     if(err) print((err.message), 5);
                     else {
                         print(lang.cmd.update.success.replace("%email%",args.c), 2);
@@ -242,7 +237,7 @@ function menu(args, cb) {
                     if(err) print((err.message), 5);
                     else {
                         print(lang.cmd.delete.success, 2);
-                        logger(lang.log.delete_contact.replace("%email%",args.e));
+                        logger(lang.log.delete_contact.replace("%name%",user.name).replace("%email%",args.e));
                     }
                     cb();
                 });
@@ -366,7 +361,7 @@ function listContacts(query, cb) {
         try {
             jsonQuery = JSON.parse(qu); // Parsear la consulta como JSON.
         } catch (err) {
-            return cb(new Error("Formato de consulta inválido"), null); // Devolver error a través del callback.
+            return cb(new Error(lang.cmd.list.parse_err), null); // Devolver error a través del callback.
         }
     }
 
@@ -383,26 +378,17 @@ function listContacts(query, cb) {
 
 function updateContact(email, values, cb) {
     MongoClient.connect(path).then(client => {
+        const { nuevoEmail, nuevoTitle } = values;
         const _cb = function (err, res) {
             client.close();
             cb(err, res);
         };
-        
-        const { nuevoEmail, nuevoTitle } = values;
-
-        if (!nuevoEmail && !nuevoTitle) {
-            return _cb(new Error("No se proporcionaron parámetros para actualizar."));
-        }
-
         const db = client.db(dbName);
         const col = db.collection(colName);
 
-        // Actualizar en memoria
-        const contact = user.contacts.find(contact => contact.email === email);
-
-        if (!contact) {
-            return cb(new Error(`No se encontró un contacto con el email: ${email}`));
-        }
+        if (!nuevoEmail && !nuevoTitle) return _cb(new Error(lang.cmd.update.no_params));
+        const contact = user.contacts.find(contact => contact.email === email); //Memoria
+        if (!contact) return _cb(new Error(lang.cmd.update.not_found.replace("%email%", email)));
 
         if (nuevoEmail) contact.email = nuevoEmail;
         if (nuevoTitle) contact.title = nuevoTitle;
@@ -413,17 +399,7 @@ function updateContact(email, values, cb) {
         if (nuevoTitle) updateFields["contacts.$[contact].title"] = nuevoTitle;
 
         // Ejecutar la actualización
-        col.updateOne(
-            {
-                email: user.email, // Buscar al usuario propietario del array
-                "contacts.email": email // Filtro para encontrar el contacto específico
-            },
-            {
-                $set: updateFields // Solo actualizar los campos proporcionados
-            },
-            {
-                arrayFilters: [{ "contact.email": email }] // Filtrar el elemento dentro del array
-            },
+        col.updateOne({ email: user.email, "contacts.email": email }, { $set: updateFields }, { arrayFilters: [{ "contact.email": email }]},
             (err, res) => {
                 if (err) return _cb(err);
                 _cb(null, res); // Devolver el resultado de la actualización
@@ -434,44 +410,32 @@ function updateContact(email, values, cb) {
 
 // Función para eliminar un contacto por su email
 function deleteContact(email, cb) {
-    const client = new MongoClient('mongodb://localhost:27017');
-    client.connect((err, client) => {
-        if (err) return cb(err);
+    // Revisar si me pasaron el parámetro Email y Title!
+    if(!email) return cb(new Error(lang.cmd.delete.no_email));
+    MongoClient.connect(path).then(client => {  
+        _cb = function (err, res) {      
+            client.close();      
+            cb(err, res);    
+        } 
 
-        let db = client.db("ej4");
-        let col = db.collection("contacts");
+        let db = client.db(dbName);
+        let col = db.collection(colName); 
 
-        // Buscar si existe un contacto con ese correo electrónico
-        col.findOne({ email: email }, (err, existingContact) => {
-            if (err) {
-                client.close();
-                return cb(err);
+        // Verificar si existe ese contacto agregado...
+        if(!user.contacts.some(contact => contact.email === email)) return _cb(new Error(lang.cmd.delete.not_found.replace("%email%", email)));
+        col.updateOne({ email: user.email },
+            { $pull: { contacts: { email: email } } }, (err, result) => {
+            if (err) return _cb(err);
+
+            if (result.modifiedCount === 0) {
+                return _cb(new Error(lang.cmd.delete.fail)); 
             }
 
-            // Si no existe el contacto, retornar un error
-            if (!existingContact) {
-                client.close();
-                return cb(new Error(lang.cmd.delete.not_found.replace("%email%", email)));
-            }
-
-            // Si existe, eliminar el contacto
-            col.deleteOne({ email: email }, (err, result) => {
-                if (err) {
-                    client.close();
-                    return cb(err);
-                }
-
-                if (result.deletedCount === 0) {
-                    client.close();
-                    return cb(new Error(lang.cmd.delete.fail)); // Si no se eliminó el contacto
-                }
-
-                // Si el contacto fue eliminado correctamente
-                cb(null, lang.cmd.delete.success.replace("%email%", email));
-                client.close();
-            });
-        });
-    });
+            // Si el contacto fue eliminado correctamente
+            _cb(null, lang.cmd.delete.success.replace("%email%", email));
+            user.contacts = user.contacts.filter(contact => contact.email !== email);
+        });   
+    })
 }
 
 function print(message, type){
