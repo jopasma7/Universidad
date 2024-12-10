@@ -4,10 +4,10 @@ const minimist = require("minimist");
 const figlet = require('figlet');
 
 const pool = mysql.createPool({
-    host: 'localhost', // tu host de MySQL
-    user: 'admin', // tu usuario de MySQL
-    password: 'admin', // tu contraseña de MySQL
-    database: 'contacts_db', // nombre de tu base de datos
+    host: 'localhost', 
+    user: 'admin', 
+    password: 'admin', 
+    database: 'contacts_db', 
     multipleStatements: true
   });
 
