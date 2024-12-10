@@ -42,3 +42,4 @@ let wsdl= fs.readFileSync('info.wsdl', 'utf8');
 soap.listen(server, '/info', myService, wsdl, function(){ 
     console.log('server initialized'); 
 });
+
