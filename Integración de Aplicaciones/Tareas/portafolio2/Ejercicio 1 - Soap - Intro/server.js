@@ -10,19 +10,15 @@ var myService = {
                 };
             },
             getCpus: function(args) { 
-
                 let cpus = os.cpus();
-                let ret = [] ;
-                for(let cpu of cpus){
-                    ret.push({
-                        model: cpu.model,
-                        speed: String(cpu.speed),
-                        user: String(cpu.times.user),
-                        sys: String(cpu.times.sys),
-                        idle: String(cpu.times.idle)
-                    });
-                }
-                return ret;
+                let cpuList = cpus.map(cpu => ({
+                    model: cpu.model,
+                    speed: String(cpu.speed),
+                    user: String(cpu.times.user),
+                    sys: String(cpu.times.sys),
+                    idle: String(cpu.times.idle)
+                }));
+                return { cpu: cpuList }; // Encapsular en un objeto compatible con WSDL
             }
         }
     }
