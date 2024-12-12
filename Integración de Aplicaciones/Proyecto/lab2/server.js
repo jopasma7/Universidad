@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const { printErr, logger } = require('./model_mongo');
 const messages = require("./messages");
 
+const PORT = 8080;
+const HOST = "http://localhost";
+
 let app = express();
 app.use(bodyParser.json());
 
@@ -34,7 +37,7 @@ app.post('/twitter/users', function (req, res) {
 
         // Envía mensaje de LOG.
         logger(messages.log.new_user.replace("%name%",user.name).replace("%surname%",user.surname)
-        .replace("%email%",user.email).replace("%password%",user.password).replace("%nick%",user.nick));
+        .replace("%email%",user.email).replace("%nick%",user.nick));
       }
     });
 });
@@ -182,14 +185,10 @@ app.get('/twitter/users', function (req, res) {
 /*               ENDPOINT >> LISTTWEETS                 */
 /*======================================================*/
 app.get('/twitter/tweets', function (req, res) {
-  const me  = req.params.me;  // usuario en los parámetros de la ruta
   const token = req.query.token; // Obtiene el token de la query
   // Verificar que el token esté presente
   if (!token) return res.status(401).send(printErr(messages.cmd.err.no_token, 0).message);
-  // Verifica que el Token sea igual que la ID.
-  if (token != me) return res.status(400).send(printErr(messages.err.invalid, 0).message);
-  else {
-    let opts = {};
+  let opts = {};
       if (req.query.opts) opts = JSON.parse(req.query.opts);
       model.listTweets(req.query.token, opts, (err, tweets) => {
         if (err) {
@@ -198,8 +197,7 @@ app.get('/twitter/tweets', function (req, res) {
           logger(`El usuario con ID <${req.query.token}> ha ejecutado el comando listTweets()`);
           res.send(tweets);
         }
-      }); 
-  } 
+      });
 });
 
 
@@ -305,14 +303,10 @@ app.post('/twitter/tweets', function (req, res) {
 /*                 ENDPOINT >> DISLIKE                  */
 /*======================================================*/
 
+app.listen(PORT);
+console.log("Servidor iniciado y escuchando en: "+HOST+":"+PORT);
 
 
 
 
 
-
-
-
-
-app.listen(8080);
-console.log("Escuchando en el puerto 8080")

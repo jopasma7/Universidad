@@ -1,8 +1,7 @@
 const readline = require("readline"); 
 const minimist = require("minimist"); 
 const messages = require("./messages"); 
-const model_rest = require("./model_rest"); 
-const model_mongo = require("./model_mongo");
+const model_rest = require("./model_rest");
 
 // Lista de comandos para autocompletar
 const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'deleteUser', 'listFollowing', 'listFollowers', 
@@ -19,6 +18,31 @@ const rl = readline.createInterface({
         return [hits.length ? hits : commands, line];
       }
 }); 
+
+
+
+const http = require('http');
+const options = {
+  hostname: 'localhost', port: 8080,
+  path: '/', method: 'GET'
+};
+
+const req = http.request(options, (res) => {
+    res.on('end', () => {
+        if (res.statusCode !== 401) {
+            console.log("El servidor no está iniciado o hay algún error.");
+            process.exit(1); // Cierra el proceso Node.js
+        }
+    });
+});
+
+req.on('error', (e) => {
+    console.error(`Problema con la solicitud: El servidor no está iniciado o hay algún error.`);
+    process.exit(1); // Cierra el proceso Node.js con un código de error
+});
+
+req.end();
+
 
 rl.setPrompt(messages.prompt); 
 console.log(messages.login_menu);
@@ -284,11 +308,7 @@ function menu(args, cb) {
                         }
                     })
 
-                break;    
-                case "exit":
-                    console.log(messages.cmd.exit.not_logged);
-                    user = undefined; token = undefined;
-                    process.exit(0);
+                break;
                 case "addUser": /* Comando: addeUser -n <nombre> -s <surname> -e <email> -p <password> -i <nick> */
                     /* Mostramos la ayuda del comando con el parámetro --help */
                     if(args.help != undefined){ console.log(messages.help.add); cb(); break;  }
@@ -312,6 +332,10 @@ function menu(args, cb) {
                         cb();   
                     })
                 break;
+                case "exit":
+                    console.log(messages.cmd.exit.not_logged);
+                    user = undefined; token = undefined;
+                    process.exit(0);
                 default: /* Muestra el menú de ayuda de login */
                     console.log(messages.login_menu);
                     cb();
@@ -331,4 +355,5 @@ function print(message, color){
         break;
     }
 }
+
 

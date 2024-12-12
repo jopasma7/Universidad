@@ -12,7 +12,7 @@ log = {
     follows_err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
     new_follow : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
     new_unfollow : "Se ha eliminado el follow del usuario con <nick>:%user_nick% para el usuario con <nick>:%target_nick%.",
-    new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
+    new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
     new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <userID>:%userID% y con el contenido: %content%.",
     new_delete : "Usuario con <ID>:%userID% eliminado. Eliminados: Tweets(%tweetsDeleted%), retweets(%retweets%), likes(%likes%), dislikes(%dislikes%), Followers(%followersUpdate%), Followings(%followingsUpdate%)",
