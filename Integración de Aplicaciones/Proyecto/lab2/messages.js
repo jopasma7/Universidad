@@ -4,7 +4,7 @@
 /*  En este archivo encontrarás todos los mensajes de   */
 /*      forma global de la aplicación Twitter Lite      */
 
-prompt = "\x1b[34m[TW Lite]\x1b[0m : "
+prompt = "\x1b[1m\x1b[34m[TW Lite]\x1b[0m : "
 log = {
     invalid_credentials : "Registrando autentificación fallida para el email: <%email%> y password: <%password%>",
     add_failed : "Se acaba de registrar una petición de creación de usuario fallida en el servidor. Name: <%name%>, Surname: <%surname%>, Email: <%email%>, Password: <%password%>, Nick: <%nick%>,",
@@ -135,6 +135,7 @@ menu =
 
 \x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                       
 \x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
+\x1b[33m5.\x1b[0m \x1b[32mdeleteUser\x1b[0m --id \x1b[32m<userID>\x1b[0m 
 \x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
 \x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
 \x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
@@ -148,7 +149,7 @@ menu =
 \x1b[33m10.\x1b[0m \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                  
 \x1b[33m11.\x1b[0m \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                    
 
-\x1b[33m12.\x1b[0m \x1b[32mexit\x1b[0m
+\x1b[33m12.\x1b[0m \x1b[32mlogout\x1b[0m
 
 Para más información acerca de un comando
 Haz uso de \x1b[33m<cmd> --help\x1b[0m

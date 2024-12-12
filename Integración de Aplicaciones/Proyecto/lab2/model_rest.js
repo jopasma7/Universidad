@@ -1,7 +1,7 @@
 const axios = require("axios");
 const url = 'http://localhost:8080/twitter';
 const messages = require("./messages"); 
-const { printErr, logger } = require('./model_mongo');
+const { print } = require('./model_mongo');
 
 /*======================================================*/
 /*                  USUARIOS >> LOGIN                   */
@@ -12,8 +12,8 @@ const { printErr, logger } = require('./model_mongo');
 /*         Si logró o falló la autentificación.         */
 
 function login(email, password, cb) {  
-    if (!email) cb(printErr(messages.cmd.login.no_email, 0));
-    else if (!password) cb(printErr(messages.cmd.login.no_password, 0));
+    if (!email) cb(print(messages.cmd.login.no_email, 401));
+    else if (!password) cb(print(messages.cmd.login.no_password, 401));
     else {
         axios.post(url + '/sessions',
             { email: email, password: password })
@@ -21,6 +21,7 @@ function login(email, password, cb) {
                 cb(null, res.data.token, res.data.user)
             })
             .catch(err => {
+                //console.log(err);
                 cb(err);
             });
     }
@@ -38,11 +39,11 @@ function login(email, password, cb) {
 
 function addUser(user, cb) {  
     // Comprobación de los parámetros. Si falta alguno imprime error en cliente y servidor (Log)
-    if (!user.name) cb(printErr(messages.cmd.addUser.no_name, 0));
-    else if (!user.surname) cb(printErr(messages.cmd.addUser.no_surname, 0));
-    else if (!user.email) cb(printErr(messages.cmd.addUser.no_email, 0));
-    else if (!user.nick) cb(printErr(messages.cmd.addUser.no_nick, 0));
-    else if (!user.password) cb(printErr(messages.cmd.addUser.no_password, 0));
+    if (!user.name) cb(print(messages.cmd.addUser.no_name, 400));
+    else if (!user.surname) cb(print(messages.cmd.addUser.no_surname, 400));
+    else if (!user.email) cb(print(messages.cmd.addUser.no_email, 401));
+    else if (!user.nick) cb(print(messages.cmd.addUser.no_nick, 401));
+    else if (!user.password) cb(print(messages.cmd.addUser.no_password, 401));
     else {
         axios.post(url + '/users', user)
             .then(res => {
@@ -77,6 +78,29 @@ function updateUser(token, newUserData, cb) {
         cb(err); // Devuelve el error en caso de fallo
     });
 }
+
+/*======================================================*/
+/*               USUARIOS >> DELETEUSER                 */
+/*======================================================*/
+/*  Esta función sirve para eliminar los datos de un    */
+/*       un usuario. Almacenado en la Aplicación        */
+/*                 Requiere un <token>                  */
+/*     Requiere especificar el usuario que queremos     */
+/*    eliminar. Devuelve un <cb> con el resultado.      */
+
+function deleteUser(token, idUser, cb) {
+    // Hacemos la petición PUT con el email del usuario
+    axios.delete(`${url}/users/${idUser}`, {
+        params: { token: token } // El token se pasa como parámetro de consulta
+    })
+    .then(res => {
+        cb(null, res.data); // Devuelve los datos del usuario eliminado
+    })
+    .catch(err => {
+        cb(err); // Devuelve el error en caso de fallo
+    });
+}
+
 
 
 /*======================================================*/
@@ -156,12 +180,12 @@ function listFollowers(token, opts, cb) {
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        si funcionó la petición de follow o no        */
 function follow(token, userId, cb){
-    axios.post(url + '/users/' + token + '/following',
-        {
-            params: { token: token, id: userId }
-        })
+    axios.post(`${url}/users/${token}/following`, 
+        { userId: userId }, 
+        { params: { token: token } }
+    )
         .then(res => {
-            cb(null, res.data)
+            cb(null, res.data); // Enviar los datos al callback en caso de éxito
         })
         .catch(err => {
             cb(err);
@@ -178,12 +202,9 @@ function follow(token, userId, cb){
 /*    Devuelve un <cb> con el resultado. Que indica     */
 /*        si funcionó la petición de unfollow o no      */
 function unfollow(token, userId, cb){
-    axios.delete(url + '/users/' + token + '/following/'+ userId,
-        {
-            params: { token: token }
-        })
+    axios.delete(`${url}/users/${token}/following/${userId}`, { params: { token: token } }) // Token en la query string
         .then(res => {
-            cb(null, res.data)
+            cb(null, res.data); // Enviar los datos al callback en caso de éxito
         })
         .catch(err => {
             cb(err);
@@ -200,7 +221,7 @@ function unfollow(token, userId, cb){
 
 function addTweet(token, content, cb) {  
     // Comprobación de los parámetros. Si falta alguno imprime error en cliente y servidor (Log)
-    if (!content) cb(printErr(messages.cmd.addTweet.no_content, 0));
+    if (!content) cb(print(messages.cmd.addTweet.no_content, 400));
     else {
         axios.post(url + '/tweets', 
             { content: content }, 
@@ -213,17 +234,6 @@ function addTweet(token, content, cb) {
             cb(err);
         });
     }
-}
-
-/*======================================================*/
-/*               MENSAJES >> ADDRETWEET                 */
-/*======================================================*/
-/*    Esta función sirve para dar retweet a un tweet    */
-/*                 Requiere un <token>                  */
-/*     Necesita una ID del Tweet para identificarlo     */
-/*          Devuelve un <cb> con el resultado.          */
-function addRetweet(token, tweetId, cb){
-
 }
 
 /*======================================================*/
@@ -240,8 +250,25 @@ function listTweets(token, opts, cb) {
     axios.get(url + '/tweets', {
         params: { token: token, opts: JSON.stringify(opts) }
     })
+    .then(res => {
+        cb(null, res.data)
+    })
+    .catch(err => {
+        cb(err);
+    });
+}
+
+/*======================================================*/
+/*               MENSAJES >> ADDRETWEET                 */
+/*======================================================*/
+/*    Esta función sirve para dar retweet a un tweet    */
+/*                 Requiere un <token>                  */
+/*     Necesita una ID del Tweet para identificarlo     */
+/*          Devuelve un <cb> con el resultado.          */
+function addRetweet(token, tweetId, cb) {
+    axios.post(`${url}/tweets/${tweetId}/retweets`, {}, { params: { token: token } }) // Token en la query string
         .then(res => {
-            cb(null, res.data)
+            cb(null, res.data); // Enviar los datos al callback en caso de éxito
         })
         .catch(err => {
             cb(err);
@@ -256,7 +283,13 @@ function listTweets(token, opts, cb) {
 /*     Necesita una ID del Tweet para identificarlo     */
 /*          Devuelve un <cb> con el resultado.          */
 function like(token, tweetId, cb){
-
+    axios.post(`${url}/tweets/${tweetId}/likes`, {}, { params: { token: token } }) // Token en la query string
+        .then(res => {
+            cb(null, res.data); // Enviar los datos al callback en caso de éxito
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 /*======================================================*/
@@ -267,7 +300,13 @@ function like(token, tweetId, cb){
 /*     Necesita una ID del Tweet para identificarlo     */
 /*          Devuelve un <cb> con el resultado.          */
 function dislike(token, tweetId, cb){
-    
+    axios.post(`${url}/tweets/${tweetId}/dislikes`, {}, { params: { token: token } }) // Token en la query string
+    .then(res => {
+        cb(null, res.data); // Enviar los datos al callback en caso de éxito
+    })
+    .catch(err => {
+        cb(err);
+    });
 }
 
 
@@ -276,6 +315,7 @@ module.exports = {
     login,    
     listUsers,
     updateUser,
+    deleteUser,
     follow,
     unfollow,
     listFollowing,
