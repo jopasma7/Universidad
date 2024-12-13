@@ -4,7 +4,7 @@
 /*  En este archivo encontrarás todos los mensajes de   */
 /*      forma global de la aplicación Twitter Lite      */
 
-prompt = "\x1b[34m[TW Lite]\x1b[0m : "
+prompt = "\x1b[1m\x1b[34m[TW Lite]\x1b[0m : "
 log = {
     invalid_credentials : "Registrando autentificación fallida para el email: <%email%> y password: <%password%>",
     add_failed : "Se acaba de registrar una petición de creación de usuario fallida en el servidor. Name: <%name%>, Surname: <%surname%>, Email: <%email%>, Password: <%password%>, Nick: <%nick%>,",
@@ -12,7 +12,7 @@ log = {
     follows_err : "Se ha registrado un error con el usuario con <nick>:%nick% a la hora de registrar un follow / unfollow a otro usuario.",
     new_follow : "Se ha registrado un nuevo follow del usuario con <nick>:%user_nick% al usuario con <nick>:%target_nick%.",
     new_unfollow : "Se ha eliminado el follow del usuario con <nick>:%user_nick% para el usuario con <nick>:%target_nick%.",
-    new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password% en la base de datos.",
+    new_user : "La aplicación ha registrado a un nuevo usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick% en la base de datos.",
     new_update : "Se ha registrado un cambio en los datos del usuario del usuario: <name>:%name%, <surname>:%surname%, <email>:%email%, <nick>:%nick%, <password>:%password%.",
     new_tweet : "Se ha registrado un nuevo tweet creado por el usuario con <userID>:%userID% y con el contenido: %content%.",
     new_delete : "Usuario con <ID>:%userID% eliminado. Eliminados: Tweets(%tweetsDeleted%), retweets(%retweets%), likes(%likes%), dislikes(%dislikes%), Followers(%followersUpdate%), Followings(%followingsUpdate%)",
@@ -37,7 +37,7 @@ cmd = {
     no_nick : ">> No se ha detectado el parámetro \x1b[33m-i <nick>\x1b[0m. Haz uso de \x1b[33maddUser --help\x1b[0m para más información.",
     email_exists : ">> No se ha podido completar el registro debido a que ya existe un usuario con ese email registrado.",
     nick_exists : ">> No se ha podido completar el registro debido a que ya existe un usuario con ese nick registrado.",
-    success : ">> ¡Enhorabuena! te has registrado correctamente en Twitter.",
+    success : ">> ¡Enhorabuena! Se ha completado el registro. Hemos enviado una petición para registrarte en la aplicación de Twitter.",
   },
   updateUser : {
     no_param : ">> Se ha cancelado la acción para el usuario porque faltan parámetros.",
@@ -71,6 +71,7 @@ cmd = {
     no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
     already_follow : ">> Ya estás siguiendo a este usuario.",
     success : ">> Has empezado a seguir al usuario con <nick> : %nick%",
+    self_follow : ">> No puedes seguirte a ti mismo. ¿Qué sentido tendría eso?",
   },
   unfollow : {
     no_id : ">> Necesitas especificar un userID. \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
@@ -78,6 +79,7 @@ cmd = {
     no_exists : ">> El usuario con userID = %userID% no existe en la base de datos.",
     not_follow : ">> Todavía no sigues a ese usuario. Empieza a seguirle con el \x1b[33mComando\x1b[0m: \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m",
     success : ">> Dejaste de seguir al usuario con <nick> : %nick%",
+    self_unfollow : ">> No puedes dejar de seguirte a ti mismo. ¿Qué sentido tendría eso?",
   },
   addTweet : {
     no_content : ">> Necesitas especificar un contenido del Tweet. \x1b[33mComando\x1b[0m: \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m",
@@ -113,6 +115,7 @@ cmd = {
   },
   err : {
     no_token : ">> Para poder ejecutar este comando tienes que loguearte en Twitter Lite.",
+    invalid : ">> Operación no permitida por Token inválido."
   },
   exit : {
     logged : "\x1b[34m>> ¿Ya te marchas \x1b[33m%nick%\x1b[0m\x1b[34m? ¡Te veo más tarde!\x1b[0m",
@@ -134,20 +137,21 @@ menu =
 
 \x1b[33m1.\x1b[0m \x1b[32mlistUsers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                       
 \x1b[33m2.\x1b[0m \x1b[32mupdateUser\x1b[0m -n \x1b[32m<name>\x1b[0m -s \x1b[32m<surname>\x1b[0m -e \x1b[32m<email>\x1b[0m -p \x1b[32m<password>\x1b[0m -i \x1b[32m<nick>\x1b[0m    
-\x1b[33m3.\x1b[0m \x1b[32mlistFollowing\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
-\x1b[33m4.\x1b[0m \x1b[32mlistFollowers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
-\x1b[33m5.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
-\x1b[33m6.\x1b[0m \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
+\x1b[33m3.\x1b[0m \x1b[32mdeleteUser\x1b[0m --id \x1b[32m<userID>\x1b[0m 
+\x1b[33m4.\x1b[0m \x1b[32mlistFollowing\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
+\x1b[33m5.\x1b[0m \x1b[32mlistFollowers\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m                                    
+\x1b[33m6.\x1b[0m \x1b[32mfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
+\x1b[33m7.\x1b[0m \x1b[32munfollow\x1b[0m --id \x1b[32m<userID>\x1b[0m 
 
     ••••• COMANDOS PARA LOS TWEETS •••••
 
-\x1b[33m7.\x1b[0m \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m 
-\x1b[33m8.\x1b[0m \x1b[32maddRetweet\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                       
-\x1b[33m9.\x1b[0m \x1b[32mlistTweets\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m   
-\x1b[33m10.\x1b[0m \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                  
-\x1b[33m11.\x1b[0m \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                    
+\x1b[33m8.\x1b[0m \x1b[32maddTweet\x1b[0m -c \x1b[32m<content>\x1b[0m 
+\x1b[33m9.\x1b[0m \x1b[32maddRetweet\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                       
+\x1b[33m10.\x1b[0m \x1b[32mlistTweets\x1b[0m -q \x1b[32m<query>\x1b[0m -ini \x1b[32m<ini>\x1b[0m -count \x1b[32m<count>\x1b[0m\x1b[0m\x1b[0m -sort \x1b[32m<sort>\x1b[0m   
+\x1b[33m11.\x1b[0m \x1b[32mlike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                  
+\x1b[33m12.\x1b[0m \x1b[32mdislike\x1b[0m --id \x1b[32m<tweetID>\x1b[0m                                    
 
-\x1b[33m12.\x1b[0m \x1b[32mexit\x1b[0m
+\x1b[33m13.\x1b[0m \x1b[32mlogout\x1b[0m
 
 Para más información acerca de un comando
 Haz uso de \x1b[33m<cmd> --help\x1b[0m
