@@ -2,38 +2,24 @@ var amqp = require('amqplib/callback_api');
 
 amqp.connect('amqp://localhost', function (err, con) {
   if (err) {
-    console.log(err.stack);
+    console.error('Error a la hora de conectar con RabbitMQ:', err.stack);
   } else {
     con.createChannel(function (err, channel) {
       if (err) {
-        console.log(err.stack);
+        console.error('Error al crear el canal:', err.stack);
       } else {
-        var severity = process.argv.length > 3 ? process.argv[2] : 'info';
-        var msg = process.argv.length > 2 ? process.argv.slice(2).join(' ') : 'Hello world!';
-
         var exchange = 'logs';
+        var severity = process.argv.length > 3 ? process.argv[2] : 'info';
+        var msg = process.argv.length > 2 ? process.argv.slice(3).join(' ') : 'Hello world!';
+        channel.assertExchange(exchange, 'direct', { durable: false });
 
-        // Eliminar el exchange si ya existe
-        channel.deleteExchange(exchange, { ifUnused: false }, function (deleteErr) {
-          if (deleteErr) {
-            console.log('Error deleting exchange:', deleteErr);
-          } else {
-            console.log('Exchange deleted successfully (if it existed)');
-          }
+        channel.publish(exchange, severity, Buffer.from(msg));
+        console.log(" [x] Se ha enviado '%s':'%s'", severity, msg);
 
-          // Ahora declarar el exchange con el tipo 'direct'
-          channel.assertExchange(exchange, 'direct', { durable: false });
-
-          // Publicar el mensaje en el exchange
-          channel.publish(exchange, severity, Buffer.from(msg));
-          console.log(" [x] Sent '%s':'%s'", severity, msg);
-
-          // Cerrar la conexión después de un breve retraso
-          setTimeout(() => {
-            con.close();
-            process.exit(0);
-          }, 500);
-        });
+        setTimeout(() => {
+          con.close();
+          process.exit(0);
+        }, 500);
       }
     });
   }

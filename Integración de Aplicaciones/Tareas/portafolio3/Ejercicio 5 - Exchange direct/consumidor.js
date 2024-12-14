@@ -1,41 +1,27 @@
 var amqp = require('amqplib/callback_api');
 
 amqp.connect('amqp://localhost', function (err, con) {
-  if (err) {
-    console.log(err.stack);
-  } else {
+  if (err) console.error('Error al conectar con RabbitMQ:', err.stack);
+  else {
     con.createChannel((err, channel) => {
-      if (err) {
-        console.log(err.stack);
-      } else {
+      if (err) console.error('Error creating channel:', err.stack);
+      else {
         var exchange = 'logs';
+        var severity = process.argv.length > 2 ? process.argv[2] : 'info';
 
-        // Eliminar el exchange si ya existe
-        channel.deleteExchange(exchange, { ifUnused: false }, function (deleteErr) {
-          if (deleteErr) {
-            console.log('Error deleting exchange:', deleteErr);
-          } else {
-            console.log('Exchange deleted successfully (if it existed)');
+        channel.assertExchange(exchange, 'direct', { durable: false });
+        channel.assertQueue('', { exclusive: true }, (err, q) => {
+          if (err) console.error('Error con la Queue:', err.stack);
+          else {
+            console.log('Esperando los mensajes:');
+            channel.bindQueue(q.queue, exchange, severity); // Usar la clave de enrutamiento
+
+            channel.consume(q.queue, function (msg) {
+              if (msg.content) {
+                console.log('Recibido [Tipo: %s] Mensaje: %s', msg.fields.routingKey, msg.content.toString());
+              }
+            }, { noAck: true });
           }
-
-          // Ahora declarar el exchange con el tipo 'fanout'
-          channel.assertExchange(exchange, 'fanout', { durable: false });
-
-          // Crear una cola exclusiva que se eliminará automáticamente cuando se cierre la conexión
-          channel.assertQueue('', { exclusive: true }, (err, q) => {
-            if (err) {
-              console.log(err.stack);
-            } else {
-              console.log('Waiting for messages');
-              // Vincular la cola al exchange 'logs'
-              channel.bindQueue(q.queue, exchange, '');
-
-              // Consumir los mensajes de la cola
-              channel.consume(q.queue, function (msg) {
-                console.log('Received ' + msg.content.toString());
-              }, { noAck: true });
-            }
-          });
         });
       }
     });

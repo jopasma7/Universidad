@@ -1,15 +1,15 @@
 const zmq = require("zeromq");
 
 async function run() {
-  const sock = new zmq.Publisher(); // Crear un socket de tipo 'pub'
+  const sock = new zmq.Publisher(); 
 
-  await sock.bind("tcp://127.0.0.1:3000"); // Escuchar en el puerto 3000
-  console.log("Publisher bound to port 3000");
+  await sock.bind("tcp://127.0.0.1:3000"); 
+  console.log("El puerto del publicador es el 3000 para el ejemplo de Pub/Sub");
 
   setInterval(async () => {
-    const message = ['time', 'Current time is: ' + new Date().toLocaleString()];
-    console.log("Sending message:", message);
-    await sock.send(message); // Enviar el mensaje
+    const message = ['Hora en Alcoy', 'Hora actual: ' + new Date().toLocaleString()];
+    console.log("Enviando mensaje:", message);
+    await sock.send(message); 
   }, 1000);
 }
 

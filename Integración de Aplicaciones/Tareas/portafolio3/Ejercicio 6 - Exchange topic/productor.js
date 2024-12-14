@@ -1,39 +1,23 @@
 var amqp = require('amqplib/callback_api');
 
 amqp.connect('amqp://localhost', function (err, con) {
-  if (err) {
-    console.log(err.stack);
-  } else {
+  if (err) console.error('Error al conectar con RabbitMQ:', err.stack);
+  else {
     con.createChannel(function (err, channel) {
-      if (err) {
-        console.log(err.stack);
-      } else {
-        var severity = process.argv.length > 3 ? process.argv[2] : 'info';
-        var msg = process.argv.length > 2 ? process.argv.slice(2).join(' ') : 'Hello world!';
+      if (err) console.error('Error creando el canal:', err.stack);
+      else {
         var exchange = 'logs';
-        var routingKey = process.argv.length > 3 ? process.argv[2] : 'unknown.info';
+        var routingKey = process.argv.length > 2 ? process.argv[2] : 'info';
+        var msg = process.argv.length > 3 ? process.argv.slice(3).join(' ') : 'Hello world!';
 
-        // Eliminar el exchange si ya existe
-        channel.deleteExchange(exchange, { ifUnused: false }, function (deleteErr) {
-          if (deleteErr) {
-            console.log('Error deleting exchange:', deleteErr);
-          } else {
-            console.log('Exchange deleted successfully (if it existed)');
-          }
+        channel.assertExchange(exchange, 'topic', { durable: false });
+        channel.publish(exchange, routingKey, Buffer.from(msg));
+        console.log(" [x] Mensaje enviado '%s':'%s'", routingKey, msg);
 
-          // Declarar el exchange con tipo 'topic'
-          channel.assertExchange(exchange, 'topic', { durable: false });
-
-          // Publicar el mensaje en el exchange con la clave de enrutamiento
-          channel.publish(exchange, routingKey, Buffer.from(msg));
-          console.log(" [x] Sent '%s':'%s'", routingKey, msg);
-
-          // Cerrar la conexión después de un breve retraso
-          setTimeout(() => {
-            con.close();
-            process.exit(0);
-          }, 500);
-        });
+        setTimeout(() => {
+          con.close();
+          process.exit(0);
+        }, 500);
       }
     });
   }
