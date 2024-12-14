@@ -117,7 +117,7 @@ function menu(args, cb) {
                     if(args.id.length !== 24){ logger.info(print(messages.cmd.deleteUser.no_length, 400)); cb(); break;   }
 
                     /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model_rest.deleteUser(token, args.id, (err,res) =>{
+                    model_mq.deleteUser(token, args.id, (err,res) =>{
                         if(err) logger.info(err.message);
                         else {
                             if(res.success) {

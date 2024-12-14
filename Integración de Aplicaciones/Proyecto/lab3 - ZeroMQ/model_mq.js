@@ -33,22 +33,6 @@ async function addUser(user, cb) {
         catch (err) { cb(err); } 
         finally { sock.close(); }
     }
-    
-    // Crear socket que conecte con el servidor (Push)
-    /*const sock = new zmq.Push();
-
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = { type: "addUser", data: user };
-            await sock.send(JSON.stringify(msg));
-
-            cb(null, { success: true });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-    }*/
 }
 
 
@@ -80,23 +64,6 @@ async function updateUser(token, newUserData, cb) {
     catch (err) { cb(err); } 
     finally { sock.close(); }
 }  
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "updateUser",
-                token: token,
-                data: newUserData,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true, values: newUserData });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();*/
-
 
 /*======================================================*/
 /*               USUARIOS >> DELETEUSER                 */
@@ -126,23 +93,6 @@ async function deleteUser(token, idUser, cb) {
     catch (err) { cb(err); } 
     finally { sock.close(); }
 }   
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "deleteUser",
-                token: token,
-                id: idUser,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        }         
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-
 
 /*======================================================*/
 /*                 USUARIOS >> FOLLOW                   */
@@ -172,23 +122,6 @@ async function follow(token, userId, cb){
     finally { sock.close(); }
 }   
     
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "follow",
-                token: token,
-                id: userId,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-
-
 /*======================================================*/
 /*               USUARIOS >> UNFOLLOW                   */
 /*======================================================*/
@@ -217,24 +150,6 @@ async function unfollow(token, userId, cb){
     finally { sock.close(); }
 }
     
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "unfollow",
-                token: token,
-                id: userId,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        }
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-}
-
 /*======================================================*/
 /*               MENSAJES >> ADDTWEET                   */
 /*======================================================*/
@@ -263,23 +178,6 @@ async function addTweet(token, content, cb) {
     finally { sock.close(); }
 }
     
-    
-    /*const sock = new zmq.Push(); 
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "addTweet",
-                token: token,
-                data: content,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        }
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-}
 
 /*======================================================*/
 /*               MENSAJES >> ADDRETWEET                 */
@@ -306,23 +204,6 @@ async function addRetweet(token, tweetId, cb) {
     } 
     catch (err) { cb(err); } 
     finally { sock.close(); }
-}
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "addRetweet",
-                token: token,
-                id: tweetId,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
 }
 
 /*======================================================*/
@@ -351,23 +232,6 @@ async function like(token, tweetId, cb){
     catch (err) { cb(err); } 
     finally { sock.close(); }
 }
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "like",
-                token: token,
-                id: tweetId,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-}
 
 /*======================================================*/
 /*                 MENSAJES >> DISLIKE                  */
@@ -395,23 +259,6 @@ async function dislike(token, tweetId, cb){
     catch (err) { cb(err); } 
     finally { sock.close(); }
 }
-    
-    /*const sock = new zmq.Push();
-    (async () => {
-        try {
-            sock.connect(URL);
-            const msg = {
-                type: "dislike",
-                token: token,
-                id: tweetId,
-            };
-            await sock.send(JSON.stringify(msg));
-            cb(null, { success: true });
-        } 
-        catch (err) { cb(err); } 
-        finally {  sock.close();  }
-    })();
-}*/
 
 module.exports = {
     addUser, 
