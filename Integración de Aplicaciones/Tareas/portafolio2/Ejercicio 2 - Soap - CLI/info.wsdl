@@ -1,62 +1,28 @@
-<wsdl:definitions 
-  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-  xmlns:tns="http://www.example.org/info/"
-  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-  xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
-  name="info" 
-  targetNamespace="http://www.example.org/info/">
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://www.example.org/info"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="http://www.example.org/info">
   <wsdl:types>
-    <xsd:schema targetNamespace="http://www.example.org/info/">
-      <xsd:element name="getMemRequest">
-        <xsd:complexType>
-           <xsd:sequence>
-          </xsd:sequence>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="getMemResponse">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="total" type="xsd:string"/>
-            <xsd:element name="free" type="xsd:string"/>
-          </xsd:sequence>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="getCpusRequest">
-        <xsd:complexType>
-           <xsd:sequence>
-          </xsd:sequence>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="getCpusResponse">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="cpu" maxOccurs="unbounded">
-              <xsd:complexType>
-                <xsd:sequence>
-                  <xsd:element name="model" type="xsd:string"/>
-                  <xsd:element name="speed" type="xsd:string"/>
-                  <xsd:element name="user" type="xsd:string"/>
-                  <xsd:element name="sys" type="xsd:string"/>
-                  <xsd:element name="idle" type="xsd:string"/>
-                </xsd:sequence>
-              </xsd:complexType>
-            </xsd:element>
-          </xsd:sequence>
-        </xsd:complexType>
-      </xsd:element>
+    <xsd:schema targetNamespace="http://www.example.org/info">
+      <xsd:element name="getMemRequest" type="xsd:string"/>
+      <xsd:element name="getMemResponse" type="xsd:string"/>
+      <xsd:element name="getCpusRequest" type="xsd:string"/>
+      <xsd:element name="getCpusResponse" type="xsd:string"/>
     </xsd:schema>
   </wsdl:types>
   <wsdl:message name="getMemRequest">
-    <wsdl:part element="tns:getMemRequest" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:getMemRequest"/>
   </wsdl:message>
   <wsdl:message name="getMemResponse">
-    <wsdl:part element="tns:getMemResponse" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:getMemResponse"/>
   </wsdl:message>
   <wsdl:message name="getCpusRequest">
-    <wsdl:part element="tns:getCpusRequest" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:getCpusRequest"/>
   </wsdl:message>
   <wsdl:message name="getCpusResponse">
-    <wsdl:part element="tns:getCpusResponse" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:getCpusResponse"/>
   </wsdl:message>
   <wsdl:portType name="InfoPortType">
     <wsdl:operation name="getMem">
@@ -68,8 +34,8 @@
       <wsdl:output message="tns:getCpusResponse"/>
     </wsdl:operation>
   </wsdl:portType>
-  <wsdl:binding name="InfoPort" type="tns:InfoPortType">
-    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <wsdl:binding name="InfoBinding" type="tns:InfoPortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
     <wsdl:operation name="getMem">
       <soap:operation soapAction="http://www.example.org/info/getMem"/>
       <wsdl:input>
@@ -90,8 +56,8 @@
     </wsdl:operation>
   </wsdl:binding>
   <wsdl:service name="InfoService">
-    <wsdl:port binding="tns:InfoPort" name="InfoPort">
-      <soap:address location="http://localhost:8000/info/"/>
+    <wsdl:port binding="tns:InfoBinding" name="InfoPort">
+      <soap:address location="http://localhost:8000/info"/>
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

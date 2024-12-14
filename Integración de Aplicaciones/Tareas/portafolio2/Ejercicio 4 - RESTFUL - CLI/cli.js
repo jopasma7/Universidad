@@ -7,7 +7,7 @@ function help(){
             - add <email> <title>
             - list [<query>]
             - rm <email>
-            - update <email> <title>
+            - update <email> <newEmail> <newTitle>
         `);
 }
 
@@ -22,11 +22,8 @@ else{
                 })
                 .catch(err => {
                     console.log("error: " +err.stack);
-                    console.log(err.response.data);
-                    console.log(err.response.status);
-                    console.log(err.response.headers);
                 });
-            break;
+        break;
         case 'list':
             axios.get("http://localhost:8080/mycontacts/contacts")
             .then(resp => {
@@ -34,14 +31,26 @@ else{
             })
             .catch(err => {
                 console.log("error: " +err.stack);
-                console.log(err.response.data);
-                console.log(err.response.status);
-                console.log(err.response.headers);
             });
-            break;
+        break;
         case 'rm':
-            break;
+            axios.delete("http://localhost:8080/mycontacts/contacts/" + process.argv[3])
+            .then(resp => {
+                console.log("success: " + JSON.stringify(resp.data));
+            })
+            .catch(err => {
+                console.log("error: " +err.stack);
+            });
+        break;
         case 'update':
-            break;
+            let con = {email: process.argv[4], title: process.argv[5]};
+            axios.put("http://localhost:8080/mycontacts/contacts/" + process.argv[3], con)
+            .then(resp => {
+                console.log("success: " + JSON.stringify(resp.data));
+            })
+            .catch(err => {
+                console.log("error: " +err.stack);
+            });
+        break;
     }
 }

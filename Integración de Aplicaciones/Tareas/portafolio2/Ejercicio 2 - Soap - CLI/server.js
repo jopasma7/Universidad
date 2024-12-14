@@ -40,5 +40,5 @@ const fs = require('fs');
 let wsdl= fs.readFileSync('info.wsdl', 'utf8'); 
 
 soap.listen(server, '/info', myService, wsdl, function(){ 
-    console.log('server initialized'); 
+    console.log('Servidor para Ejercicios de SOAP inicializado...'); 
 });
