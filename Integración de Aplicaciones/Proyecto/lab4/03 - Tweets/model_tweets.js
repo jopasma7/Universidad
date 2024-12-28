@@ -1,4 +1,5 @@
 const mongodb = require('mongodb'); 
+const axios = require('axios');
 const MongoClient = mongodb.MongoClient; 
 const url = 'mongodb://localhost:27017';
 const database = 'twitter_lite';
@@ -8,6 +9,24 @@ const logger = require('./client/logger');
 var colecciones = {
     tweets : "tweets"
 }
+
+// Función auxiliar para obtener la sesión de un usuario
+function getSession(token, cb) {
+  axios.get(urlUsers + '/sessions',{ params: { token: token } }).then(res => {
+          cb(null, res.data)
+      }).catch(err => {
+          cb(err);
+      });
+}
+
+// Función auxiliar para listar usuarios
+function listUsers(token, opts, cb) {
+    axios.get(urlUsers + '/users', { params: { token: token, opts: JSON.stringify(opts) }}).then(res => {
+            cb(null, res.data)
+        }).catch(err => {
+            cb(err);
+        });
+  }
 
 /*======================================================*/
 /*               MENSAJES >> ADDTWEET                   */
@@ -27,39 +46,31 @@ function addTweet(token, content, cb){
 
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
-        let tweets = db.collection(colecciones.tweets); 
-        let users = db.collection(colecciones.users);   
+        let tweets = db.collection(colecciones.tweets);    
 
-        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => {      
-             /* Si no existe el Token envía un mensaje de error y devuelve el cb */
-            if (!_user) return _cb(print(messages.cmd.err.no_token, 400)); 
-            
+        /* Verificar que el token del usuario esté presente */
+        getSession(token, (err, user) => {
+            if (err) return _cb(print(messages.cmd.err.no_token, 400));
             /* Creación de Tweet : Estructura */
             let contentMsg = content.replace(/'/g, '');
             let tweet = {
                 owner : {
-                    id : _user._id,
-                    name : _user.name + " " + _user.surname,
-                    nick : _user.nick
+                    id : user._id,
+                    name : user.name + " " + user.surname,
+                    nick : user.nick
                 },
                 content : contentMsg,
                 retweets : [],
                 like : [],
                 dislike : []
-            } 
-
+            }
             /* Ejecuta insertOne para crear e insertar el tweet en la base de datos */        
             tweets.insertOne(tweet).then(result => {              
                 _cb(null, { id: result.insertedId.toHexString(), owner: _user._id, content: contentMsg });          
             }).catch(err => {              
                 _cb(err)            
-            });   
-        }).catch(err => {      
-            _cb(err)    
-        });  
+            });
+        }); 
     }).catch(err => {    
         cb(err);  
     });
@@ -83,12 +94,10 @@ function addRetweet(token, tweetId, cb){
 
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
-        let users = db.collection(colecciones.users); 
         let tweets = db.collection(colecciones.tweets);     
 
-        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => { 
+        /* Verificar que el token del usuario esté presente */
+        getSession(token, (err, _user) => {
             if (!_user) return _cb(print(messages.cmd.err.no_token, 400)); 
             /* Revisaremos si el Tweet al que queremos dar Retweet existe en la base de datos */            
             tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
@@ -123,9 +132,7 @@ function addRetweet(token, tweetId, cb){
             }).catch(err => {      
                 _cb(err)    
             });    
-        }).catch(err => {      
-            _cb(err)    
-        });  
+        }); 
     }).catch(err => {    
         cb(err);  
     }); 
@@ -153,13 +160,11 @@ function listTweets(token, opts, cb) {
 
         /* Creamos la conexión a la base de datos */ 
         let db = client.db(database);    
-        let users = db.collection(colecciones.users);  
         let tweets = db.collection(colecciones.tweets);   
 
-        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-        /* Si el usuario está en la base de datos es una consulta válida y procedemos a buscar la query */
-        users.findOne({ _id: new mongodb.ObjectId(token) }).then(_user => {      
-            if (!_user) return _cb(print(messages.cmd.err.no_token, 400)); 
+        /* Verificar que el token del usuario esté presente */
+        getSession(token, (err, _user) => {    
+            if (err) return _cb(print(messages.cmd.err.no_token, 400)); 
 
             let jsonQuery = {};
             if(opts.q && typeof opts.q === 'string' && opts.q.trim() !== ''){
@@ -209,15 +214,12 @@ function like(token, tweetId, cb){
         }   
 
         /* Creamos la conexión a la base de datos */ 
-        let db = client.db(database);    
-        let users = db.collection(colecciones.users); 
+        let db = client.db(database);     
         let tweets = db.collection(colecciones.tweets);     
 
-        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => { 
-            if (!_user) return _cb(print(messages.cmd.err.no_token, 400));
+        /* Verificar que el token del usuario esté presente */
+        getSession(token, (err, _user) => { 
+            if (err) return _cb(print(messages.cmd.err.no_token, 400));
             /* Revisaremos si el Tweet al que queremos dar like existe en la base de datos */            
             tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
                 if (!tw) return _cb(print((messages.cmd.like.no_exists.replace("%tweetID%",tweetId)), 404));
@@ -273,11 +275,9 @@ function dislike(token, tweetId, cb){
         let users = db.collection(colecciones.users); 
         let tweets = db.collection(colecciones.tweets);     
 
-        /* Utilizamos findOne para encontrar en la base de datos el usuario que está ejecutando la consulta */
-        /* Si el usuario está en la base de datos es una consulta válida y procedemos */
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-        .then(_user => { 
-            if (!_user) return _cb(print(messages.cmd.err.no_token, 400));
+        /* Verificar que el token del usuario esté presente */
+        getSession(token, (err, _user) => {
+            if (err) return _cb(print(messages.cmd.err.no_token, 400));
             /* Revisaremos si el Tweet al que queremos dar dislike existe en la base de datos */            
             tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
                 if (!tw) {
@@ -369,15 +369,6 @@ function print(message, code = 0) {
   }
 
 module.exports = {
-    addUser,    
-    login,    
-    listUsers,
-    updateUser,
-    deleteUser,
-    follow,
-    unfollow,
-    listFollowing,
-    listFollowers,
     addTweet,
     addRetweet,
     listTweets,

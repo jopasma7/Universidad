@@ -228,6 +228,21 @@ app.delete('/twitter/users/:me/following/:userId', function (req, res) {
 });
 
 
+/*======================================================*/
+/*            ENDPOINT >> TOKEN SESSIONS                */
+/*======================================================*/
+app.get('/twitter/sessions', function (req, res) {
+  let opts = { id: req.query.token };
+  model.listUsers(req.query.token, opts, (err, users) => {
+      if (err) res.status(400).send(err.message);
+      else if (!users.length) res.status(401).send(); // Devuelve 401 si no hay usuarios
+      else {
+          res.send(users[0]); // Devuelve el usuario
+      }
+  });
+});
+
+
 // Middleware manejo de errores.
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
