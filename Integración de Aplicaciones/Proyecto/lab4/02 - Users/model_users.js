@@ -1,9 +1,9 @@
 const mongodb = require('mongodb'); 
 const MongoClient = mongodb.MongoClient; 
 const url = 'mongodb://localhost:27017';
-const database = 'twitter_lite';
+const database = 'twitter_users';
 const messages= require("./messages"); 
-const logger = require('./client/logger');
+const logger = require('./logger');
 
 var colecciones = {
     users : "users"

@@ -18,6 +18,15 @@ const logger = winston.createLogger({
             })
           ),
     }),
+    // Transmisión a un archivo (por ejemplo, 'logs/app.log')
+    new winston.transports.File({ filename: 'logs/Tweets.log', 
+        format: winston.format.combine(
+            winston.format.timestamp({ format: 'DD/MM/YYYY HH:mm:ss' }),
+            winston.format.printf(({ timestamp, message }) => {
+              return `[${timestamp}] ${message.replace(/\x1b\[[0-9;]*m/g, '')}`;
+            })
+          ),
+    })
     
   ],
 });

@@ -1,8 +1,8 @@
 const readline = require("readline"); 
 const minimist = require("minimist"); 
-const messages = require("../messages"); 
-const model_rest = require("../model_rest");
-const model_mq = require("../model_mq");
+const messages = require("./messages"); 
+const model_rest = require("./model_rest");
+const model_mq = require("./model_mq");
 const logger = require('./logger');
 
 // Lista de comandos para autocompletar
@@ -415,4 +415,6 @@ function print(message, code = 0) {
   
     return newMSG;
   }
+
+module.exports = { print };
 

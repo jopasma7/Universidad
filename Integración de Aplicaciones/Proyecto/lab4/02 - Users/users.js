@@ -237,7 +237,8 @@ app.get('/twitter/sessions', function (req, res) {
       if (err) res.status(400).send(err.message);
       else if (!users.length) res.status(401).send(); // Devuelve 401 si no hay usuarios
       else {
-          res.send(users[0]); // Devuelve el usuario
+          const user = users.find(user => user.id === opts.id);
+          res.send(user); // Devuelve el usuario
       }
   });
 });
@@ -251,14 +252,14 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(REST_PORT);
-logger.info("Servidor RESTful iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
+logger.info("Servidor RESTful de Usuarios iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
 
 async function startServer() {
   const sock = new zmq.Router();
 
   try {
     await sock.bind(`${MSG_HOST}:${MSG_PORT}`);
-    logger.info(`Servidor de Mensajes Async iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
+    logger.info(`Servidor de Mensajes Async de Usuarios iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
 
     for await (const [address, msg] of sock) {
       logger.info(printMsgLog(msg.toString()));
@@ -341,13 +342,13 @@ async function startServer() {
           });
         break;
         default:
-          console.log('Tipo de mensaje desconocido: ' + parsedMsg.type);
+          logger.info('Tipo de mensaje desconocido: ' + parsedMsg.type);
           sock.send([address, JSON.stringify({ success: false, message: 'Tipo de mensaje desconocido.' })]);
           break;
       }
     }
   } catch (err) {
-    console.error(err.stack);
+    logger.info(err.stack);
   }
 }
 

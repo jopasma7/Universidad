@@ -2,9 +2,12 @@ const mongodb = require('mongodb');
 const axios = require('axios');
 const MongoClient = mongodb.MongoClient; 
 const url = 'mongodb://localhost:27017';
-const database = 'twitter_lite';
+const database = 'twitter_tweets';
 const messages= require("./messages"); 
-const logger = require('./client/logger');
+const logger = require('./logger');
+
+const URL_USERS = 'http://localhost:8080/twitter';
+const URL_TWEETS = 'http://localhost:8085/twitter';
 
 var colecciones = {
     tweets : "tweets"
@@ -12,7 +15,7 @@ var colecciones = {
 
 // Función auxiliar para obtener la sesión de un usuario
 function getSession(token, cb) {
-  axios.get(urlUsers + '/sessions',{ params: { token: token } }).then(res => {
+  axios.get(URL_USERS + '/sessions',{ params: { token: token } }).then(res => {
           cb(null, res.data)
       }).catch(err => {
           cb(err);
@@ -21,7 +24,7 @@ function getSession(token, cb) {
 
 // Función auxiliar para listar usuarios
 function listUsers(token, opts, cb) {
-    axios.get(urlUsers + '/users', { params: { token: token, opts: JSON.stringify(opts) }}).then(res => {
+    axios.get(URL_USERS + '/users', { params: { token: token, opts: JSON.stringify(opts) }}).then(res => {
             cb(null, res.data)
         }).catch(err => {
             cb(err);
@@ -66,7 +69,7 @@ function addTweet(token, content, cb){
             }
             /* Ejecuta insertOne para crear e insertar el tweet en la base de datos */        
             tweets.insertOne(tweet).then(result => {              
-                _cb(null, { id: result.insertedId.toHexString(), owner: _user._id, content: contentMsg });          
+                _cb(null, { id: result.insertedId.toHexString(), owner: user._id, content: contentMsg });          
             }).catch(err => {              
                 _cb(err)            
             });

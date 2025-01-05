@@ -6,10 +6,10 @@ const messages = require("./messages");
 const logger = require('./logger');
 const zmq = require('zeromq');
 
-const REST_PORT = 8080;
+const REST_PORT = 8085;
 const REST_HOST = "http://localhost";
 
-const MSG_PORT = 9090;
+const MSG_PORT = 9095;
 const MSG_HOST = "tcp://127.0.0.1";
 
 let app = express();
@@ -131,14 +131,14 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(REST_PORT);
-logger.info("Servidor RESTful iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
+logger.info("Servidor RESTful de Tweets iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
 
 async function startServer() {
   const sock = new zmq.Router();
 
   try {
     await sock.bind(`${MSG_HOST}:${MSG_PORT}`);
-    logger.info(`Servidor de Mensajes Async iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
+    logger.info(`Servidor de Mensajes Async de Tweets iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
 
     for await (const [address, msg] of sock) {
       logger.info(printMsgLog(msg.toString()));
