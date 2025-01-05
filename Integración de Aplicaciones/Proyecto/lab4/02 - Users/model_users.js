@@ -193,101 +193,6 @@ function updateUser(token, user, cb){
     });
 }
 
-/*======================================================*/
-/*               USUARIOS >> DELETEUSER                 */
-/*======================================================*/
-/*  Esta función sirve para eliminar los datos de un    */
-/*       un usuario almacenado en la Aplicación         */
-/*                 Requiere un <token>                  */
-/*            Requiere especificar el usuario           */
-/*          Devuelve un <cb> con el resultado.          */
-
-function deleteUser(token, idRemove, cb) {
-    MongoClient.connect(url).then(client => {
-        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
-        const _cb = function (err, res) {
-            client.close();
-            cb(err, res);
-        };
-
-        /* Creamos la conexión a la base de datos */
-        const db = client.db(database);
-        const users = db.collection(colecciones.users);
-        const tweets = db.collection(colecciones.tweets); // HAY QUE HACER UNA LLAMADA AL SERVIDOR DE TWEETS
-
-        // Verificar si el token corresponde a un usuario existente
-        users.findOne({ _id: new mongodb.ObjectId(token) })
-            .then(user => {
-                if (!user) return _cb(print(messages.cmd.err.no_token, 400));
-
-                // Verificar datos relacionados
-                users.findOne({ _id: new mongodb.ObjectId(idRemove) })
-                    .then(userToRemove => {
-                        if (!userToRemove) return _cb(print(messages.cmd.deleteUser.no_exists.replace("%userID%",idRemove), 404));
-
-                        // Asegurarse de que los seguidores y seguidos sean ObjectId
-                        const followersIds = userToRemove.followers.map(f => new mongodb.ObjectId(f.$oid || f));
-                        const followingIds = userToRemove.following.map(f => new mongodb.ObjectId(f.$oid || f));
-
-                        Promise.all([    
-                            tweets.deleteMany({ 'owner.id': new mongodb.ObjectId(idRemove) }) // Eliminar tweets del usuario
-                                .then(result => result.deletedCount),
-
-                            users.updateMany( // Eliminar al usuario de las listas de followers de otros usuarios
-                                { _id: { $in: followersIds } },
-                                { $pull: { following: new mongodb.ObjectId(idRemove) } }
-                            ).then(result => result.modifiedCount),
-
-                            users.updateMany( // Eliminar al usuario de las listas de following de otros usuarios
-                                { _id: { $in: followingIds } },
-                                { $pull: { followers: new mongodb.ObjectId(idRemove) } }
-                            ).then(result => result.modifiedCount),
-
-                            tweets.updateMany( // Eliminar los likes del usuario en los tweets de otros usuarios
-                                { 'like.id': new mongodb.ObjectId(idRemove) },
-                                { $pull: { 'like': { 'id': new mongodb.ObjectId(idRemove) } } }
-                            ).then(result => result.modifiedCount),
-
-                            tweets.updateMany( // Eliminar los dislikes del usuario en los tweets de otros usuarios
-                                { 'dislike.id': new mongodb.ObjectId(idRemove) },
-                                { $pull: { 'dislike': { 'id': new mongodb.ObjectId(idRemove) } } }
-                            ).then(result => result.modifiedCount),
-
-                            tweets.updateMany( // Eliminar retweets del usuario en los tweets de otros usuarios
-                                { 'retweets.id': new mongodb.ObjectId(idRemove) },
-                                { $pull: { 'retweets': { 'id': new mongodb.ObjectId(idRemove) } } }
-                            ).then(result => result.modifiedCount)
-                        ])
-                            .then(([tweetsDeleted, followersUpdated, followingUpdated, likesRemoved, dislikesRemoved, retweetsRemoved]) => {
-                                // Eliminar al usuario de la colección de usuarios
-                                users.deleteOne({ _id: new mongodb.ObjectId(idRemove) })
-                                    .then(deleteResult => {
-                                        if (deleteResult.deletedCount === 0) {
-                                            _cb(print(messages.cmd.deleteUser.error, 500));
-                                        } else {
-                                            logger.info(printLog(messages.log.new_delete.replace("%userID%",idRemove).replace("%tweetsDeleted%",tweetsDeleted)
-                                            .replace("%followersUpdate%",followersUpdated).replace("%followingsUpdate%",followingUpdated)
-                                            .replace("%likes%",likesRemoved).replace("%dislikes%",dislikesRemoved)
-                                            .replace("%retweets%",retweetsRemoved)));
-                                            _cb(null, {
-                                                message: 'Usuario eliminado con éxito', id: idRemove, tweets : tweetsDeleted, followers : followersUpdated,
-                                                followings : followingUpdated, like : likesRemoved, dislike : dislikesRemoved, retweets : retweetsRemoved
-                                            });
-                                        }
-                                    })
-                                    .catch(err => _cb(err));
-                            })
-                            .catch(err => _cb(err)); // Error al actualizar los tweets
-                    })
-                    .catch(err => _cb(err)); // Error al encontrar el usuario a eliminar
-            })
-            .catch(err => _cb(err)); // Error al encontrar el usuario
-    }).catch(err => {
-        cb(err); // Error en la conexión a la base de datos
-    });
-}
-
-
 
 
 /*======================================================*/
@@ -660,7 +565,6 @@ module.exports = {
     login,    
     listUsers,
     updateUser,
-    deleteUser,
     follow,
     unfollow,
     listFollowing,

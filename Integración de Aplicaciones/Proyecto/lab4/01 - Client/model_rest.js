@@ -79,30 +79,6 @@ function updateUser(token, newUserData, cb) {
 }
 
 /*======================================================*/
-/*               USUARIOS >> DELETEUSER                 */
-/*======================================================*/
-/*  Esta función sirve para eliminar los datos de un    */
-/*       un usuario. Almacenado en la Aplicación        */
-/*                 Requiere un <token>                  */
-/*     Requiere especificar el usuario que queremos     */
-/*    eliminar. Devuelve un <cb> con el resultado.      */
-
-function deleteUser(token, idUser, cb) {
-    // Hacemos la petición PUT con el email del usuario
-    axios.delete(`${URL_USERS}/users/${idUser}`, {
-        params: { token: token } // El token se pasa como parámetro de consulta
-    })
-    .then(res => {
-        cb(null, res.data); // Devuelve los datos del usuario eliminado
-    })
-    .catch(err => {
-        cb(err); // Devuelve el error en caso de fallo
-    });
-}
-
-
-
-/*======================================================*/
 /*               USUARIOS >> LISTUSERS                  */
 /*======================================================*/
 /* Esta función sirve para listar a todos los usuarios  */
@@ -354,7 +330,6 @@ module.exports = {
     login,    
     listUsers,
     updateUser,
-    deleteUser,
     follow,
     unfollow,
     listFollowing,

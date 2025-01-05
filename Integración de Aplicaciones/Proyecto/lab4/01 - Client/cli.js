@@ -6,7 +6,7 @@ const model_mq = require("./model_mq");
 const logger = require('./logger');
 
 // Lista de comandos para autocompletar
-const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'deleteUser', 'listFollowing', 'listFollowers', 
+const commands = ['exit', 'listUsers', 'login', 'addUser', 'updateUser', 'listFollowing', 'listFollowers', 
     'follow', 'unfollow', 'addTweet', 'addRetweet', 'listTweets', 'like', 'dislike'];
 
 const rl = readline.createInterface({    
@@ -104,34 +104,6 @@ function menu(args, cb) {
                         else console.table(res);
                         cb();
                     })
-                break;
-                case "deleteUser": /* Comando: deleteUser --id <userID> */
-                     /* Mostramos la ayuda del comando con el parámetro --help */
-                     if(args.help != undefined){ console.log(messages.help.delete); cb(); break;  } 
-
-                    /* Comprobación de los parámetros. Revisa si existen y no son undefined */
-                    if(!args.id || (typeof args.id !== 'string' || args.id.trim() === '')){  
-                        logger.info(print(messages.cmd.deleteUser.no_id, 400)); cb(); break;  
-                    }
-                    /* Comprobar también si el ID introducido tiene 24 números */
-                    if(args.id.length !== 24){ logger.info(print(messages.cmd.deleteUser.no_length, 400)); cb(); break;   }
-
-                    /* Tenemos los parámetros correctamente entonces le pasamos el método */
-                    model_mq.deleteUser(token, args.id, (err,res) =>{
-                        if(err) logger.info(err.message);
-                        else {
-                            if(res.success) {
-                                if(token == res.id) {
-                                    user = undefined; token = undefined;
-                                    rl.setPrompt(messages.prompt); 
-                                    console.log(messages.login_menu);
-                                    logger.info(print(messages.cmd.deleteUser.success_own, 200));
-                                }
-                                else logger.info(print(messages.cmd.deleteUser.success.replace("%userID%", res.id), 200));
-                            }else logger.info(res.message);
-                        }
-                        cb(); 
-                    });
                 break;
                 case "follow": /* Comando: follow -id <userID> */
                      /* Mostramos la ayuda del comando con el parámetro --help */

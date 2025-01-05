@@ -67,35 +67,6 @@ async function updateUser(token, newUserData, cb) {
 }  
 
 /*======================================================*/
-/*               USUARIOS >> DELETEUSER                 */
-/*======================================================*/
-/*  Esta función sirve para eliminar los datos de un    */
-/*       un usuario. Almacenado en la Aplicación        */
-/*                 Requiere un <token>                  */
-/*     Requiere especificar el usuario que queremos     */
-/*    eliminar. Devuelve un <cb> con el resultado.      */
-
-async function deleteUser(token, idUser, cb) {
-    const sock = new zmq.Dealer();
-    sock.connect(URL_USERS);
-  
-    const msg = {
-        type: "deleteUser",
-        token: token,
-        id: idUser,
-    };
-  
-    try {
-      await sock.send(JSON.stringify(msg));
-      const [reply] = await sock.receive();
-      const response = JSON.parse(reply.toString());
-      cb(null, response);
-    } 
-    catch (err) { cb(err); } 
-    finally { sock.close(); }
-}   
-
-/*======================================================*/
 /*                 USUARIOS >> FOLLOW                   */
 /*======================================================*/
 /*     Esta función sirve para seguir a otro usuario    */
@@ -264,7 +235,6 @@ async function dislike(token, tweetId, cb){
 module.exports = {
     addUser, 
     updateUser,
-    deleteUser,
     follow,
     unfollow,
     addTweet,
