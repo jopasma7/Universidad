@@ -5,11 +5,16 @@ const MongoClient = mongodb.MongoClient;
 const database = 'twitter_tweets';
 const messages= require("./messages"); 
 const logger = require('./logger');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const mongoUrl = process.env.MONGO_URL;
 
 const URL_USERS = 'http://localhost:8080/twitter';
 const URL_TWEETS = 'http://localhost:8085/twitter';
 
-let url = 'mongodb://localhost:27017';
+let url = mongoUrl || 'mongodb://localhost:27010';
+console.log("Variable: ", process.env.MONGO_URL);
 if (process.argv.length > 4) url = process.argv[4];
 logger.info('>> Servidor MongoDB de Tweets en la URL: ' + url);
 

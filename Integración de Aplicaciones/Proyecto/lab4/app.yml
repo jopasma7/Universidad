@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-tweets
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-tweets
+  template:
+    metadata:
+      labels:
+        app: mongo-tweets
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-storage
+          mountPath: /data/db
+      volumes:
+      - name: mongo-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc-tweets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-tweets
+  namespace: microservices
+spec:
+  ports:
+  - port: 27017
+  selector:
+    app: mongo-tweets
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc-tweets
+  namespace: microservices
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-users
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-users
+  template:
+    metadata:
+      labels:
+        app: mongo-users
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-storage
+          mountPath: /data/db
+      volumes:
+      - name: mongo-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc-users
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-users
+  namespace: microservices
+spec:
+  ports:
+  - port: 27017
+  selector:
+    app: mongo-users
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc-users
+  namespace: microservices
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tweets
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tweets
+  template:
+    metadata:
+      labels:
+        app: tweets
+    spec:
+      containers:
+      - name: tweets
+        image: tweets
+        ports:
+        - containerPort: 8085
+        env:
+        - name: MONGO_URL
+          value: mongodb://mongo-tweets:27017/twitter_tweets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tweets
+  namespace: microservices
+spec:
+  type: NodePort
+  ports:
+  - port: 8085
+    nodePort: 32000
+  selector:
+    app: tweets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users
+  template:
+    metadata:
+      labels:
+        app: users
+    spec:
+      containers:
+      - name: users
+        image: users
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGO_URL
+          value: mongodb://mongo-users:27017/twitter_users
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users
+  namespace: microservices
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    nodePort: 32001
+  selector:
+    app: users

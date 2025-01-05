@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  tweets:
+    build: .
+    ports:
+      - "${TWEETS_PORT}:${TWEETS_PORT}"
+      - "${TWEETS_ZEROMQ_PORT}:${TWEETS_ZEROMQ_PORT}"
+      - "${TWEETS_TCP_PORT}:${TWEETS_TCP_PORT}"
+    depends_on:
+      - mongo_tweets
+    environment:
+      - MONGO_URL=mongodb://mongo_tweets:27017/twitter_tweets
+    command: ["npm", "run", "server"]
+
+  users:
+    build:
+      context: ./02 - Users/
+    container_name: users
+    ports:
+      - "${USERS_PORT}:${USERS_PORT}"
+      - "${USERS_ZEROMQ_PORT}:${USERS_ZEROMQ_PORT}"
+      - "${USERS_TCP_PORT}:${USERS_TCP_PORT}"
+    depends_on:
+      - mongo_users
+    environment:
+      - MONGO_URL=mongodb://mongo_users:27017/twitter_users
+    command: ["npm", "run", "server"]
+
+  mongo_tweets:
+    image: mongo:latest
+    ports:
+      - "${MONGO_TWEETS_PORT}:27017"
+    volumes:
+      - mongo-tweets-data:/data/db
+
+  mongo_users:
+    image: mongo:latest
+    ports:
+      - "${MONGO_USERS_PORT}:27017"
+    volumes:
+      - mongo-users-data:/data/db
+
+volumes:
+  mongo-tweets-data:
+  mongo-users-data:

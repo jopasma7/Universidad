@@ -96,26 +96,6 @@ app.put('/twitter/users/:id', (req, res) => {
   });
 });
 
-/*======================================================*/
-/*              ENDPOINT >> DELETEUSER                  */
-/*======================================================*/
-app.delete('/twitter/users/:id', function (req, res) {
-  const { token } = req.query; // Token recibido como parámetro
-  const { id } = req.params;  // ID del usuario recibido en los parámetros de la ruta
-
-  // Validaciones
-  if (!token) return res.status(400).json({ error: 'Token es requerido' });
-  if (!id) return res.status(400).json({ error: 'El ID del usuario es requerido' });
-  // Llamar al método deleteUser para eliminar el usuario
-  model.deleteUser(token, id, (err, result) => {
-    if (err) {
-      res.status(400).send({ error: err.message }); // Error al eliminar el usuario
-    } else {
-      res.status(200).send({ success: true, id: result.id, values: result }); // Usuario eliminado correctamente
-    }
-  });
-});
-
 
 /*======================================================*/
 /*             ENDPOINT >> LISTFOLLOWING                */
@@ -298,20 +278,6 @@ async function startServer() {
                 .replace("%nick%", user.nick)
                 .replace("%password%", user.password)));
               response = { success: true, user: user };
-            }
-            sock.send([address, JSON.stringify(response)]);
-          });
-        break;
-        /*======================================================*/
-        /*               MESSAGES >> DELETEUSER                 */
-        /*======================================================*/
-        case 'deleteUser':
-          model.deleteUser(parsedMsg.token, parsedMsg.id, (err, res) => {
-            let response;
-            if (err) response = { success: false, message: err.message };
-            else {
-              logger.info(printLog(messages.log.new_delete.replace("%nick%", res.nick)));
-              response = { success: true, id: res.id, values: res };
             }
             sock.send([address, JSON.stringify(response)]);
           });
