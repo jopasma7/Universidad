@@ -21,7 +21,6 @@ function login(email, password, cb) {
                 cb(null, res.data.token, res.data.user)
             })
             .catch(err => {
-                //console.log(err);
                 cb(err);
             });
     }

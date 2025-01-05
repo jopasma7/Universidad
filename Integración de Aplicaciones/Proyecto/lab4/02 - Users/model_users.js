@@ -1,9 +1,12 @@
 const mongodb = require('mongodb'); 
 const MongoClient = mongodb.MongoClient; 
-const url = 'mongodb://localhost:27017';
 const database = 'twitter_users';
 const messages= require("./messages"); 
 const logger = require('./logger');
+
+let url = 'mongodb://localhost:27017';
+if (process.argv.length > 4) url = process.argv[4];
+logger.info('>> Servidor MongoDB de Usuarios en la URL: ' + url);
 
 var colecciones = {
     users : "users"

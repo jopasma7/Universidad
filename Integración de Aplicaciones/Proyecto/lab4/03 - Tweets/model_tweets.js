@@ -1,13 +1,17 @@
 const mongodb = require('mongodb'); 
 const axios = require('axios');
+const { ObjectId } = require('mongodb');
 const MongoClient = mongodb.MongoClient; 
-const url = 'mongodb://localhost:27017';
 const database = 'twitter_tweets';
 const messages= require("./messages"); 
 const logger = require('./logger');
 
 const URL_USERS = 'http://localhost:8080/twitter';
 const URL_TWEETS = 'http://localhost:8085/twitter';
+
+let url = 'mongodb://localhost:27017';
+if (process.argv.length > 4) url = process.argv[4];
+logger.info('>> Servidor MongoDB de Tweets en la URL: ' + url);
 
 var colecciones = {
     tweets : "tweets"
@@ -58,7 +62,7 @@ function addTweet(token, content, cb){
             let contentMsg = content.replace(/'/g, '');
             let tweet = {
                 owner : {
-                    id : user._id,
+                    id : new mongodb.ObjectId(user.id),
                     name : user.name + " " + user.surname,
                     nick : user.nick
                 },
@@ -87,58 +91,54 @@ function addTweet(token, content, cb){
 /*     Necesita una ID del Tweet para identificarlo     */
 /*          Devuelve un <cb> con el resultado.          */
 function addRetweet(token, tweetId, cb){
-    MongoClient.connect(url).then(client => {  
-
-        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+    MongoClient.connect(url)
+      .then(client => {
         _cb = function (err, res) {      
             client.close();      
             cb(err, res);    
-        }   
-
-        /* Creamos la conexión a la base de datos */ 
-        let db = client.db(database);    
-        let tweets = db.collection(colecciones.tweets);     
-
+        } 
+  
+        const db = client.db(database);
+        const tweets = db.collection(colecciones.tweets);
+        
         /* Verificar que el token del usuario esté presente */
         getSession(token, (err, _user) => {
-            if (!_user) return _cb(print(messages.cmd.err.no_token, 400)); 
-            /* Revisaremos si el Tweet al que queremos dar Retweet existe en la base de datos */            
-            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
+            if (!_user || err) return _cb(print(messages.cmd.err.no_token, 400)); 
+    
+            tweets.findOne({ _id: new ObjectId(tweetId) })
+              .then(tw => {
                 /* Si no existe el TweetID envía un mensaje de error y devuelve el cb */
                 if (!tw) return _cb(print((messages.cmd.addRetweet.no_exists.replace("%tweetID%",tweetId)), 404));
-                    
                 /* Tenemos que revisar que no se pueda dar retweet la misma persona a su propio tweet */
-                if(tw.owner.id.toString() === _user._id.toHexString()) return _cb(print(messages.cmd.addRetweet.your_tweet, 403));
+                if(tw.owner.id.toString() === _user.id) return _cb(print(messages.cmd.addRetweet.your_tweet, 403));
                 
                 /* Como si que está en la base de datos, procederemos a hacer el retweet */
                 /* Pero antes tenemos que revisar si el usuario ya ha dado retweet previamente a ese mensaje */
-                if(tw.retweets.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
+                if(tw.retweets.map(id => id._id.toString()).includes(_user.id)){
                     /* Error : Ya hiciste retweet de ese mensaje */
                     return _cb(print(messages.cmd.addRetweet.already_retweet, 403));  
                 }
+                
+                let r = { _id : new ObjectId(_user.id), nick: _user.nick }
 
-                let r = { id : _user._id, nick : _user.nick }
-                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
                 tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
-                    {
+                    {  
                         $push: { retweets: r }
                     }
-                    ).then(result => {  /* Agrega el nuevo usuario al array de retweets*/
-                    
-                        if(result){                                    
-                            /* Ya tenemos nuestro nombre agregado en la lista retweets del Tweet. */
-                            _cb(null, {tweet : tw, owner : tw.owner.nick, user_retweet: _user});
-                        }else _cb(err);
-                }).catch(err => {              
-                    _cb(err)            
-                });
-            }).catch(err => {      
-                _cb(err)    
-            });    
-        }); 
-    }).catch(err => {    
-        cb(err);  
-    }); 
+                ).then(result => {
+                      if (result) return _cb(null, {tweet : tw, owner : tw.owner.nick, user_retweet: _user});
+                  })
+                  .catch(err => {
+                      return _cb(print(err.message, 500)); 
+                  });
+              })
+              .catch(err => {
+                return _cb(print(err.message, 500));
+              });
+          });
+        }).catch(err => {
+        cb(print('Error connecting to MongoDB', 500));
+      });
 }
 
 /*======================================================*/
@@ -207,57 +207,49 @@ function listTweets(token, opts, cb) {
 /*                 Requiere un <token>                  */
 /*     Necesita una ID del Tweet para identificarlo     */
 /*          Devuelve un <cb> con el resultado.          */
-function like(token, tweetId, cb){
-    MongoClient.connect(url).then(client => {  
-
-        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+function like(token, tweetId, cb) {
+    MongoClient.connect(url)
+      .then(client => {
         _cb = function (err, res) {      
             client.close();      
             cb(err, res);    
-        }   
+        } 
+  
+        const db = client.db(database);
+        const tweets = db.collection(colecciones.tweets);
+  
+        getSession(token, (err, _user) => {
+          if (err) return _cb(print(messages.cmd.err.no_token, 400));
+  
+          tweets.findOne({ _id: new ObjectId(tweetId) })
+            .then(tw => {
+              if (!tw) return _cb(print(messages.cmd.like.no_exists.replace("%tweetID%", tweetId), 404));
+              if (tw.owner.id.toString() === _user.id) return _cb(print(messages.cmd.like.your_tweet, 403));
+              if (tw.like.map(id => id._id.toString()).includes(_user.id)) return _cb(print(messages.cmd.like.already_like, 403));
+            
+              const lk = { _id: new ObjectId(_user.id), nick: _user.nick };
 
-        /* Creamos la conexión a la base de datos */ 
-        let db = client.db(database);     
-        let tweets = db.collection(colecciones.tweets);     
-
-        /* Verificar que el token del usuario esté presente */
-        getSession(token, (err, _user) => { 
-            if (err) return _cb(print(messages.cmd.err.no_token, 400));
-            /* Revisaremos si el Tweet al que queremos dar like existe en la base de datos */            
-            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
-                if (!tw) return _cb(print((messages.cmd.like.no_exists.replace("%tweetID%",tweetId)), 404));
-                /* Tenemos que revisar que no se pueda dar like la misma persona a su propio tweet */
-                if(tw.owner.id.toString() === _user._id.toHexString()) return _cb(print(messages.cmd.like.your_tweet, 403));
-                /* Como si que está en la base de datos, procederemos a hacer el like */
-                /* Pero antes tenemos que revisar si el usuario ya ha dado like previamente a ese mensaje */
-                if(tw.like.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                    /* Error : Ya tienes like a ese mensaje */
-                    return _cb(print(messages.cmd.like.already_like, 403));
-                }
-                let lk = { id : _user._id, nick : _user.nick }
-
-                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
-                    {
-                        $push: { like: lk },
-                        $pull: { dislike: { id: { $in: [_user._id] } }  }
-                    }
-                    ).then(result => {  /* Agrega el nuevo usuario al array de likes*/            
-                        if(result) _cb(null, {tweet : tw, user : _user });
-                        else _cb(err);
-                }).catch(err => {              
-                    _cb(err)            
+              tweets.updateOne(
+                { _id: new ObjectId(tweetId) },
+                { $push: { like: lk } }
+              )
+                .then(result => {
+                    if (result) return _cb(null, {tweet : tw, user : _user });
+                    else return _cb(print(messages.cmd.like.error, 500));
+                })
+                .catch(err => {
+                    return _cb(print(err.message, 500)); 
                 });
-            }).catch(err => {      
-                _cb(err)    
-            });    
-        }).catch(err => {      
-            _cb(err)    
-        });  
-    }).catch(err => {    
-        cb(err);  
-    }); 
-}
+            })
+            .catch(err => {
+              return _cb(print(err.message, 500));
+            });
+        });
+      })
+      .catch(err => {
+        cb(print('Error connecting to MongoDB', 500));
+      });
+  }
 
 /*======================================================*/
 /*                 MENSAJES >> DISLIKE                  */
@@ -267,60 +259,45 @@ function like(token, tweetId, cb){
 /*     Necesita una ID del Tweet para identificarlo     */
 /*          Devuelve un <cb> con el resultado.          */
 function dislike(token, tweetId, cb){
-    MongoClient.connect(url).then(client => {  
-        /* Crear un nuevo callback llamado _cb que hace lo mismo que el cb normal pero también cierra la conexión */
+    MongoClient.connect(url)
+      .then(client => {
         _cb = function (err, res) {      
             client.close();      
             cb(err, res);    
-        }   
-        /* Creamos la conexión a la base de datos */ 
-        let db = client.db(database);    
-        let users = db.collection(colecciones.users); 
-        let tweets = db.collection(colecciones.tweets);     
-
+        } 
+  
+        const db = client.db(database);
+        const tweets = db.collection(colecciones.tweets);
+  
         /* Verificar que el token del usuario esté presente */
         getSession(token, (err, _user) => {
             if (err) return _cb(print(messages.cmd.err.no_token, 400));
-            /* Revisaremos si el Tweet al que queremos dar dislike existe en la base de datos */            
-            tweets.findOne({ _id: new mongodb.ObjectId(tweetId) }).then(tw => {
-                if (!tw) {
-                    /* Si no existe el TweetID envía un mensaje de error y devuelve el cb */
-                    return _cb(print((messages.cmd.dislike.no_exists.replace("%tweetID%",tweetId)), 404));  
-                }
-                /* Tenemos que revisar que no se pueda dar dislike la misma persona a su propio tweet */
-                if(tw.owner.id.toString() === _user._id.toHexString())return _cb(print(messages.cmd.dislike.your_tweet, 403));
+            /* Revisaremos si el Tweet al que queremos dar dislike existe en la base de datos */      
+            tweets.findOne({ _id: new ObjectId(tweetId) }).then(tw => {
+                if (!tw) return _cb(print((messages.cmd.dislike.no_exists.replace("%tweetID%",tweetId)), 404));  
+                if (tw.owner.id.toString() === _user.id) return _cb(print(messages.cmd.dislike.your_tweet, 403));
+                if (tw.dislike.map(id => id._id.toString()).includes(_user.id)) return _cb(print(messages.cmd.dislike.already_dislike, 403));
+                
+                const lk = { _id: new ObjectId(_user.id), nick: _user.nick };
 
-                /* Como si que está en la base de datos, procederemos a hacer el dislike */
-                /* Pero antes tenemos que revisar si el usuario ya ha dado dislike previamente a ese mensaje */
-                if(tw.dislike.map(id => id.id.toString()).includes(new mongodb.ObjectId(_user._id).toString())){
-                    /* Error : Ya tienes dislike a ese mensaje */
-                    return _cb(print(messages.cmd.dislike.already_dislike, 403));
-                }
-
-                let lk = {  id : _user._id,  nick : _user.nick }
-
-                 /* Usaremos updateOne para actualizar el valor directamente en la base de datos sin recogerlo */
-                tweets.updateOne({ _id: new mongodb.ObjectId(tweetId) }, 
-                    {
-                        $push: { dislike: lk },
-                        $pull: { like: { id: { $in: [_user._id] } }  }
-                    }
-                    ).then(result => {  /* Agrega el nuevo usuario al array de dislikes*/
-                    
-                        if(result) cb(null, {tweet : tw, user : _user });
-                        else _cb(err);
-                }).catch(err => {              
-                    _cb(err)            
+                tweets.updateOne({ _id: new ObjectId(tweetId) },
+                {
+                    $push: { dislike: lk },
+                    $pull: { like: { id: { $in: [_user._id] } }  }
+                }).then(result => {
+                    if (result) return _cb(null, {tweet : tw, user : _user });
+                    else return _cb(print(messages.cmd.dislike.error, 500));
+                }).catch(err => {
+                    return _cb(print(err.message, 500)); 
                 });
-            }).catch(err => {      
-                _cb(err)    
-            });    
-        }).catch(err => {      
-            _cb(err)    
-        });  
-    }).catch(err => {    
-        cb(err);  
-    }); 
+            }).catch(err => {
+                return _cb(print(err.message, 500));
+            });
+        });
+      })
+      .catch(err => {
+        cb(print('Error connecting to MongoDB', 500));
+      });
 }
 
 function printLog(message) {

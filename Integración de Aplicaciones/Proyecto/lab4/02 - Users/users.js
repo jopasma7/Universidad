@@ -6,11 +6,14 @@ const messages = require("./messages");
 const logger = require('./logger');
 const zmq = require('zeromq');
 
-const REST_PORT = 8080;
-const REST_HOST = "http://localhost";
+let REST_PORT = 8080;
+let REST_HOST = "http://localhost";
 
-const MSG_PORT = 9090;
-const MSG_HOST = "tcp://127.0.0.1";
+let MSG_PORT = 9090;
+let MSG_HOST = "tcp://127.0.0.1";
+
+if (process.argv.length > 2) REST_PORT = parseInt(process.argv[2]);
+if (process.argv.length > 3) MSG_PORT = parseInt(process.argv[3]);
 
 let app = express();
 app.use(bodyParser.json());
@@ -252,14 +255,14 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(REST_PORT);
-logger.info("Servidor RESTful de Usuarios iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
+logger.info(">> Servidor RESTful de Usuarios iniciado y escuchando en: "+REST_HOST+":"+REST_PORT);
 
 async function startServer() {
   const sock = new zmq.Router();
 
   try {
     await sock.bind(`${MSG_HOST}:${MSG_PORT}`);
-    logger.info(`Servidor de Mensajes Async de Usuarios iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
+    logger.info(`>> Servidor de Mensajes Async de Usuarios iniciado y escuchando en: ${MSG_HOST}:${MSG_PORT}`);
 
     for await (const [address, msg] of sock) {
       logger.info(printMsgLog(msg.toString()));
